@@ -28,7 +28,7 @@ public class DStarLite implements Serializable {
 	private int maxSteps;
 	public int scanElem = 0;
 	public boolean verChanged = false;
-	//private boolean isWaiting; //will wait until rover_notifies me. 
+	// private boolean isWaiting; //will wait until rover_notifies me.
 	private PriorityQueue<State> openList = new PriorityQueue<State>();
 	// Change back to private****
 	public HashMap<State, CellInfo> cellHash = new HashMap<State, CellInfo>();
@@ -84,11 +84,11 @@ public class DStarLite implements Serializable {
 		// add it to hash table
 		cellHash.put(s_goal, tmp);
 		openList.add(s_goal);
-		//System.out.println("adding goal to queue");
-		// the start of cell's cost and rhs value will be manhattan distance to
-		// goal.
-		// Recall, algorithm finds cell path...backwards, i.e heuristic costs
-		// should decrease moving forward.
+		/*
+		 * the start of cell's cost and rhs value will be manhattan distance to
+		 * goal. Recall, algorithm finds cell path...backwards, i.e heuristic
+		 * costs should decrease moving forward.
+		 */
 		tmp = new CellInfo();
 		tmp.g = tmp.rhs = heuristicManhattan(s_start, s_goal);
 		tmp.cost = C1;
@@ -96,7 +96,8 @@ public class DStarLite implements Serializable {
 		s_start = calculateKey(s_start);
 
 		s_last = s_start;
-		//System.out.println("s_last in  init is s_start: " + s_start.toString());
+		// System.out.println("s_last in init is s_start: " +
+		// s_start.toString());
 
 	}
 
@@ -120,9 +121,9 @@ public class DStarLite implements Serializable {
 			return 0;
 
 		// if the cellHash doesn't contain the State u
-		if (cellHash.get(u) == null){
+		if (cellHash.get(u) == null) {
 			return heuristicManhattan(u, s_goal);
-			//return Double.POSITIVE_INFINITY;
+			// return Double.POSITIVE_INFINITY;
 		}
 		return cellHash.get(u).rhs;
 	}
@@ -132,9 +133,9 @@ public class DStarLite implements Serializable {
 	 */
 	private double getG(State u) {
 		// if the cellHash doesn't contain the State u, use Manhattan distance
-		if (cellHash.get(u) == null){
+		if (cellHash.get(u) == null) {
 			return heuristicManhattan(u, s_goal);
-			//return Double.POSITIVE_INFINITY;
+			// return Double.POSITIVE_INFINITY;
 		}
 		return cellHash.get(u).g;
 	}
@@ -186,19 +187,19 @@ public class DStarLite implements Serializable {
 		LinkedList<State> n = new LinkedList<State>();
 		State cur = s_start;
 
-		 if (getG(s_start) == Double.POSITIVE_INFINITY) {
-			 System.out.println("No Path to Goal : s_start == POS.INF");
-			 return false;
-		 }
+		if (getG(s_start) == Double.POSITIVE_INFINITY) {
+			System.out.println("No Path to Goal : s_start == POS.INF");
+			return false;
+		}
 
 		while (cur.neq(s_goal)) {
 			System.out.println("CURRENT IS " + cur.toString());
 
-//			if (getG(s_start) == Double.POSITIVE_INFINITY) {
-//				System.out.println("No Path to Goal : s_start == POS.INF");
-//				return false;
-//			}
-			//System.out.println("while s_start.neq(s_goal)");
+			// if (getG(s_start) == Double.POSITIVE_INFINITY) {
+			// System.out.println("No Path to Goal : s_start == POS.INF");
+			// return false;
+			// }
+			// System.out.println("while s_start.neq(s_goal)");
 
 			path.add(cur);
 			System.out.println("Added to path: " + cur.toString());
@@ -230,23 +231,25 @@ public class DStarLite implements Serializable {
 						tmin = val2;
 						cmin = val;
 						smin = i;
-						//System.out.println("new start will be " + smin.toString());
+						// System.out.println("new start will be " +
+						// smin.toString());
 					}
 				} else if (val < cmin) { // else if val is less than previous
 											// min, update new min
 					tmin = val2;
 					cmin = val;
 					smin = i;
-					//System.out.println("new start will be " + smin.toString());
+					// System.out.println("new start will be " +
+					// smin.toString());
 				}
 			}
-			
+
 			n.clear();
 			cur = smin;
-			//System.out.println("NEW S_START IS: " + cur.toString());
-//			// cur = smin;
-			//TODO: make rover move, let rover do stuff, wait in the mean time
-			//when rover signals, start again
+			// System.out.println("NEW S_START IS: " + cur.toString());
+			// // cur = smin;
+			// TODO: make rover move, let rover do stuff, wait in the mean time
+			// when rover signals, start again
 		}
 		path.add(s_goal);
 		return true;
@@ -262,8 +265,8 @@ public class DStarLite implements Serializable {
 	private int computeShortestPath() {
 		LinkedList<State> s = new LinkedList<State>();
 
-		if (openList.isEmpty()){
-			//System.out.println("open list is empty, returning 1 from CSP");
+		if (openList.isEmpty()) {
+			// System.out.println("open list is empty, returning 1 from CSP");
 			return 1;
 		}
 
@@ -271,50 +274,32 @@ public class DStarLite implements Serializable {
 		while ((!openList.isEmpty())
 				&& (openList.peek().lt(s_start = calculateKey(s_start)) || (getRHS(s_start) != getG(s_start)))) {// inconsistent
 																													// state
-			//System.out.println("Enterring while loop in CSP");
+			// System.out.println("Enterring while loop in CSP");
 			if (k++ > maxSteps) {
 				System.out.println("At maxsteps");
 				return -1;
 			}
 
 			State u = openList.poll();
-			// check state for inconsistency, a consistent state (no changes)
-			// --> g == rhs
-			// boolean test = (getRHS(s_start) != getG(s_start));
-
-			// lazy remove
-			// while (true) {
-			// if (openList.isEmpty())
-			// return 1;
-			// u = openList.poll();
-			// //isValid checks if state is in openList, in which it returns
-			// true.
-			// if (!isValid(u))
-			// continue;
-			// // if u key is less than current node, and its consistent
-			// if (!(u.lt(s_start)) && (!test))
-			// return 2;
-			// break;
-			// }
-
-			// openHash.remove(u);
 
 			State k_old = new State(u);
-			//System.out.println("Lookint at state: " + u);
+			// System.out.println("Lookint at state: " + u);
 			if (k_old.lt(calculateKey(u))) { // u is out of date
-				//System.out.println("Old key is less than new key");
-				//System.out.println("Inserting to priority key " + u.toString());
+				// System.out.println("Old key is less than new key");
+				// System.out.println("Inserting to priority key " +
+				// u.toString());
 				insert(u);
 			} else if (getG(u) > getRHS(u)) { // needs update (got better)
 				setG(u, getRHS(u));
 				s = getPred(u);
-				//System.out.println("g > rhs, obstacle moved");
+				// System.out.println("g > rhs, obstacle moved");
 				for (State i : s) {
 					updateVertex(i);
 				}
-			} else { 
+			} else {
 				setG(u, Double.POSITIVE_INFINITY);
-				//System.out.println("last branch, setting g to inf...updating vertices...");
+				// System.out.println("last branch, setting g to inf...updating
+				// vertices...");
 				s = getPred(u);
 
 				for (State i : s) {
@@ -382,7 +367,7 @@ public class DStarLite implements Serializable {
 			s.addFirst(tempState);
 		// NORTH
 		tempState = new State(u.getCoord().xpos, u.getCoord().ypos - 1, new Pair<Double, Double>(-1.0, -1.0));
-		if (!occupied(tempState)){
+		if (!occupied(tempState)) {
 			s.addFirst(tempState);
 		}
 		return s;
@@ -391,17 +376,6 @@ public class DStarLite implements Serializable {
 	/*
 	 * Update the position of the agent/robot. This does not force a replan.
 	 */
-	// public void updateStart(int x, int y) {
-	// Coord newStart = new Coord(x, y);
-	// s_start.setCoord(newStart);
-	//
-	// // k_m += heuristic(s_last,s_start);
-	// k_m += heuristicManhattan(s_last, s_start);
-	//
-	// s_start = calculateKey(s_start);
-	// s_last = s_start;
-	// }
-
 	public void updateStart(Coord coord) {
 		s_start.setCoord(coord);
 
@@ -420,7 +394,7 @@ public class DStarLite implements Serializable {
 	 * to use.
 	 */
 	// @SuppressWarnings("unchecked")
-	public void updateGoal(int x, int y) // ****************************************************************************
+	public void updateGoal(Coord coord) // ****************************************************************************
 	{
 		List<Pair<ipoint2, Double>> toAdd = new ArrayList<Pair<ipoint2, Double>>();
 		Pair<ipoint2, Double> tempPoint;
@@ -442,7 +416,7 @@ public class DStarLite implements Serializable {
 
 		k_m = 0;
 
-		s_goal.setCoord(new Coord(x, y));
+		s_goal.setCoord(coord);
 
 		CellInfo tmp = new CellInfo();
 		tmp.g = tmp.rhs = 0;
@@ -483,29 +457,18 @@ public class DStarLite implements Serializable {
 				if (tmp2 < tmp)
 					tmp = tmp2;
 			}
-			//if (!close(getRHS(u), tmp))
-				setRHS(u, tmp);
-				//System.out.println("Updating vertex, new RHS value: " + tmp);
+			// if (!close(getRHS(u), tmp))
+			setRHS(u, tmp);
+			// System.out.println("Updating vertex, new RHS value: " + tmp);
 		}
 		if (openList.contains(u)) {
 			openList.remove(u);
-			//System.out.println("removed " + u.toString() + " from openList. Updating Vertex");
+			// System.out.println("removed " + u.toString() + " from openList.
+			// Updating Vertex");
 		}
 		if (!close(getG(u), getRHS(u)))
 			insert(u);
 	}
-
-	/*
-	 * Returns true if state u is on the open list or not by checking if it is
-	 * in the hash table. -uses close, shouldn't be more than .00001 difference
-	 */
-	// private boolean isValid(State u) {
-	// if (openHash.get(u) == null)
-	// return false;
-	// // if (!close(keyHashCode(u), openHash.get(u)))
-	// // return false;
-	// return true;
-	// }
 
 	/*
 	 * Sets the G value for state u
@@ -558,7 +521,7 @@ public class DStarLite implements Serializable {
 	 * updateCell, given a mapTile to calculate new cost
 	 */
 	public void updateCell(Coord cellCoordinate, MapTile mt) {
-		//scanElem++;
+		// scanElem++;
 		State u = new State();
 		u.setCoord(cellCoordinate);
 		u.setMapTile(mt);
@@ -569,8 +532,8 @@ public class DStarLite implements Serializable {
 		makeNewCell(u);
 		double oldCost = cellHash.get(u).cost;
 		double newCost = isObstacle(mt) ? OBSTACLE_COST : C1;
-		
-		if(oldCost != newCost){
+
+		if (oldCost != newCost) {
 			verChanged = true;
 			if (isObstacle(mt))
 				cellHash.get(u).cost = OBSTACLE_COST;
@@ -578,48 +541,27 @@ public class DStarLite implements Serializable {
 				cellHash.get(u).cost = C1;
 			updateVertex(u);
 		}
-		
-		if(scanElem == 4){
-			if(verChanged){
+
+		if (scanElem == 4) {
+			if (verChanged) {
 				k_m += heuristicManhattan(s_last, s_start);
 				s_last = s_start;
 			}
 			scanElem = 0;
 			verChanged = false;
-			computeShortestPath();
-			//System.out.println("Updated last cell...");
-			//System.out.println("New s_last is now s_start: " + s_last.toString());
+			// System.out.println("Updated last cell...");
+			// System.out.println("New s_last is now s_start: " +
+			// s_last.toString());
 		}
-		
+
 	}
 
 	/*
 	 * Inserts state u into openList and openHash
 	 */
 	private void insert(State u) {
-		// iterator cur
-		float csum;
-
 		u = calculateKey(u);
-		// cur = openHash.find(u);
-		csum = keyHashCode(u);
-
-		// return if cell is already in list. TODO: this should be
-		// uncommented except it introduces a bug, I suspect that there is a
-		// bug somewhere else and having duplicates in the openList queue
-		// hides the problem...
-		// if ((cur != openHash.end()) && (close(csum,cur->second))) return;
-
-		// openHash.put(u, csum);
 		openList.add(u);
-	}
-
-	/*
-	 * Returns the key hash code for the state u, this is used to compare a
-	 * state that has been updated
-	 */
-	private float keyHashCode(State u) {
-		return (float) (u.getK().first() + 1193 * u.getK().second());
 	}
 
 	/*
@@ -683,13 +625,13 @@ public class DStarLite implements Serializable {
 
 		if (mt.getHasRover()) {
 			obstacle = true;
-		}else if(mt.getTerrain() == Terrain.NONE){ 
+		} else if (mt.getTerrain() == Terrain.NONE) {
 			obstacle = true;
-		}else if (rdt == RoverDriveType.WHEELS) {
+		} else if (rdt == RoverDriveType.WHEELS) {
 			if (mt.getTerrain() == Terrain.SAND || mt.getTerrain() == Terrain.ROCK)
 				obstacle = true;
 		} else if (rdt == RoverDriveType.TREADS) {
-			if (mt.getTerrain() == Terrain.ROCK )
+			if (mt.getTerrain() == Terrain.ROCK)
 				obstacle = true;
 		} else if (rdt == RoverDriveType.WALKER) {
 			if (mt.getTerrain() == Terrain.SAND)
@@ -725,7 +667,7 @@ public class DStarLite implements Serializable {
 		// Time the replanning
 		long begin = System.currentTimeMillis();
 		pf.replan();
-		pf.updateGoal(3, 2);
+		// pf.updateGoal(3, 2);
 		long end = System.currentTimeMillis();
 
 		System.out.println("Time: " + (end - begin) + "ms");

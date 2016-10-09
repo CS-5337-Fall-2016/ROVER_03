@@ -157,20 +157,18 @@ public class ROVER_03 {
 	}
 
 	public void move(String line, Coord start, Coord target) throws Exception {
-		
-		//tool1 = 
-
+		Coord curTarget = target;
 		dsl = new DStarLite(RoverDriveType.getEnum(equipment.get(0)));
-		//dsl.init(start, target);
+		;
 		// boolean goingForward = true;
 		boolean stuck = false; // just means it did not change locations between
 								// requests,
 		boolean blocked = false;// could be velocity limit or obstruction etc.
 
-		//int currentDirection = getRandom(cardinals.length);
+		// int currentDirection = getRandom(cardinals.length);
 		Coord currentLoc = null;
 		Coord previousLoc = null;
-		int stepCount = 0;
+		// int stepCount = 0;
 		int stuckCount = 0;
 
 		/**
@@ -189,24 +187,26 @@ public class ROVER_03 {
 				currentLoc = extractLocationFromString(line);
 
 			}
-			if(initializedDSL)
+			if (initializedDSL)
 				dsl.updateStart(currentLoc);
-			if(!initializedDSL){
+			if (!initializedDSL) {
 				dsl.goal_c = target;
 				dsl.start_c = currentLoc;
 				dsl.init(currentLoc, target);
 				dsl.replan();
 				initializedDSL = true;
 			}
-			//dsl.replan();
-			System.out.println(rovername + " currentLoc at start: " + currentLoc);
-			// after getting location set previous equal current to be able to
-			// check for stuckness and blocked later
-			previousLoc = currentLoc;
 
+			System.out.println(rovername + " currentLoc at start: " + currentLoc);
+
+			previousLoc = currentLoc;
+			// if we've reached our destination, get a new one
+			// for now go to (4, 4) on the map
+			if (currentLoc.equals(curTarget)) {
+				curTarget = new Coord(4, 4);
+				dsl.updateGoal(curTarget);
+			}
 			// ***** do a SCAN *****
-			// gets the scanMap from the server based on the Rover current
-			// location
 			doScan();
 			// prints the scanMap to the Console output for debug purposes
 			scanMap.debugPrintMap();
@@ -219,12 +219,10 @@ public class ROVER_03 {
 			// update/add new mapTiles to dsl hashMaps
 			System.out.println("Updting tiles");
 			updateScannedStates(scanMapTiles, currentLoc);
-			// Thread.sleep(300);
 			// find path from current node to goal
 			dsl.replan();
-			System.out.println("Path size is: " + dsl.getPath().size());
-			// TODO: Get path and move to new location
-			// TODO: create methods to find cardinals from path...
+			// System.out.println("Path size is: " + dsl.getPath().size());
+
 			String move = getMoveFromPath(currentLoc);
 			// try to move
 			System.out.println("Requesting to move " + move);
@@ -252,6 +250,8 @@ public class ROVER_03 {
 				stuckCount = 0;
 			if (stuckCount >= 10)
 				out.println("MOVE " + move);
+
+			// if
 
 			// System.out.println("ROVER_03 stuck test " + stuck);
 			System.out.println("ROVER_03 blocked test " + blocked);
@@ -290,9 +290,9 @@ public class ROVER_03 {
 
 		if (jsonEqListIn.startsWith("EQUIPMENT")) {
 			while (!(jsonEqListIn = in.readLine()).equals("EQUIPMENT_END")) {
-				if (jsonEqListIn == null) {
-					break;
-				}
+				// if (jsonEqListIn == null) {
+				// break;
+				// }
 				// System.out.println("ROVER_03 incomming EQUIPMENT result: " +
 				// jsonEqListIn);
 				jsonEqList.append(jsonEqListIn);
@@ -406,27 +406,10 @@ public class ROVER_03 {
 				if (newCoord.equals(current))
 					continue;
 				dsl.updateCell(newCoord, tiles[col][row]);
-				//dsl.scanElem++;
 			}
 		}
-//		int xWest = findCoordinate(centerCol - 1, current.xpos, centerCol);
-//		int yPos = findCoordinate(centerRow, current.ypos, centerRow);
-//		int xPos = findCoordinate(centerCol, current.xpos, centerCol);
-//		int xEast = findCoordinate(centerCol + 1, current.xpos, centerCol);
-//		int yNorth = findCoordinate(centerRow -1, current.ypos, centerRow);
-//		int ySouth = findCoordinate(centerRow + 1, current.ypos, centerRow);
-//		
-//		dsl.updateCell(new Coord(xWest, yPos), tiles[2][3]);
-//		dsl.updateCell(new Coord(xEast, yPos), tiles[4][3]);
-//		dsl.updateCell(new Coord(xPos, ySouth), tiles[3][4]);
-//		dsl.updateCell(new Coord(xPos, yNorth), tiles[3][2]);
-//		
-//		dsl.updateCell(new Coord(xWest, yNorth), tiles[2][2]);
-//		dsl.updateCell(new Coord(xEast, yNorth), tiles[4][2]);
-//		dsl.updateCell(new Coord(xWest, ySouth), tiles[2][4]);
-//		dsl.updateCell(new Coord(xEast, ySouth), tiles[4][4]);
 		System.out.println("Updated neighbors to center");
-		dsl.scanElem+=4;
+		dsl.scanElem += 4;
 	}
 
 	/*
@@ -466,9 +449,10 @@ public class ROVER_03 {
 		int newX = nextState.getCoord().xpos;
 		int newY = nextState.getCoord().ypos;
 		// Debugging:::
-//		for(int x = 0; x < Math.min(20, dsl.getPath().size()); x++){
-//			System.out.println("step " + x + ": " + dsl.getPath().get(x).getCoord().toString());
-//		}
+		// for(int x = 0; x < Math.min(20, dsl.getPath().size()); x++){
+		// System.out.println("step " + x + ": " +
+		// dsl.getPath().get(x).getCoord().toString());
+		// }
 		if (newX > current.xpos)
 			return cardinals[1];
 		else if (newX < current.xpos)
@@ -478,7 +462,6 @@ public class ROVER_03 {
 		else
 			return cardinals[0];
 	}
-	
 
 	/**
 	 * Runs the client
