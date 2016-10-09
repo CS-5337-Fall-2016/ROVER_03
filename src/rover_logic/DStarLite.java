@@ -1,5 +1,6 @@
 package rover_logic;
 
+import java.io.Serializable;
 import java.util.*;
 import common.Coord;
 import common.MapTile;
@@ -11,23 +12,27 @@ import enums.Terrain;
 //*Thank you!
 //*Code modified for swarmBot purposes
 
-public class DStarLite implements java.io.Serializable {
+public class DStarLite implements Serializable {
 
 	private static final long serialVersionUID = 1L;
 
 	// Private Member variables
 	private List<State> path = new ArrayList<State>();
 	private double C1;
-	private final int OBSTACLE_COST = -1;
+	private final int OBSTACLE_COST = 10000;
 	private double k_m;
 	private State s_start = new State();
 	private State s_goal = new State();
+	public Coord start_c, goal_c;
 	private State s_last = new State();
 	private int maxSteps;
+	public int scanElem = 0;
+	public boolean verChanged = false;
+	//private boolean isWaiting; //will wait until rover_notifies me. 
 	private PriorityQueue<State> openList = new PriorityQueue<State>();
 	// Change back to private****
 	public HashMap<State, CellInfo> cellHash = new HashMap<State, CellInfo>();
-	private HashMap<State, Float> openHash = new HashMap<State, Float>();
+	// private HashMap<State, Float> openHash = new HashMap<State, Float>();
 
 	// Constants
 	private double M_SQRT2 = Math.sqrt(2.0);
@@ -37,12 +42,12 @@ public class DStarLite implements java.io.Serializable {
 
 	// Default constructor
 	public DStarLite() {
-		maxSteps = 80000; // how many steps to update the map with
+		maxSteps = 10000; // how many steps to update the map with
 		C1 = 1; // cost constant
 	}
 
 	public DStarLite(RoverDriveType rdt) {
-		maxSteps = 80000;
+		maxSteps = 10000;
 		C1 = 1;
 		this.rdt = rdt;
 	}
@@ -60,7 +65,7 @@ public class DStarLite implements java.io.Serializable {
 	public void init(Coord start, Coord goal) {
 		cellHash.clear();
 		path.clear();
-		openHash.clear();
+		// openHash.clear();
 		while (!openList.isEmpty())
 			openList.poll();
 
@@ -70,12 +75,16 @@ public class DStarLite implements java.io.Serializable {
 		s_goal.setCoord(goal);
 
 		// rhs, g, and cost to goal should all be low, or zero
+		// H is cost from currentVertex to original vertex.
+		// g is the cost from currentVertex to goal //using manhattan distance
 		CellInfo tmp = new CellInfo();
-		tmp.g = 0;
+		tmp.g = Double.POSITIVE_INFINITY;
 		tmp.rhs = 0;
 		tmp.cost = C1;
 		// add it to hash table
 		cellHash.put(s_goal, tmp);
+		openList.add(s_goal);
+		//System.out.println("adding goal to queue");
 		// the start of cell's cost and rhs value will be manhattan distance to
 		// goal.
 		// Recall, algorithm finds cell path...backwards, i.e heuristic costs
@@ -87,6 +96,7 @@ public class DStarLite implements java.io.Serializable {
 		s_start = calculateKey(s_start);
 
 		s_last = s_start;
+		//System.out.println("s_last in  init is s_start: " + s_start.toString());
 
 	}
 
@@ -110,8 +120,10 @@ public class DStarLite implements java.io.Serializable {
 			return 0;
 
 		// if the cellHash doesn't contain the State u
-		if (cellHash.get(u) == null)
+		if (cellHash.get(u) == null){
 			return heuristicManhattan(u, s_goal);
+			//return Double.POSITIVE_INFINITY;
+		}
 		return cellHash.get(u).rhs;
 	}
 
@@ -120,8 +132,10 @@ public class DStarLite implements java.io.Serializable {
 	 */
 	private double getG(State u) {
 		// if the cellHash doesn't contain the State u, use Manhattan distance
-		if (cellHash.get(u) == null)
+		if (cellHash.get(u) == null){
 			return heuristicManhattan(u, s_goal);
+			//return Double.POSITIVE_INFINITY;
+		}
 		return cellHash.get(u).g;
 	}
 
@@ -159,57 +173,80 @@ public class DStarLite implements java.io.Serializable {
 
 	public boolean replan() {
 		path.clear();
+		// s_last = s_start;
 		// like A* - finds the shortest path using priority queue - returns -1
 		// if no path/exceeds max steps
+		// init(start_c, goal_c);
 		int res = computeShortestPath();
 		if (res < 0) {
-			System.out.println("No Path to Goal");
+			System.out.println("No Path to Goal : shortest_path returns -1");
 			return false;
 		}
 
 		LinkedList<State> n = new LinkedList<State>();
 		State cur = s_start;
 
-		if (getG(s_start) == Double.POSITIVE_INFINITY) {
-			System.out.println("No Path to Goal");
-			return false;
-		}
+		 if (getG(s_start) == Double.POSITIVE_INFINITY) {
+			 System.out.println("No Path to Goal : s_start == POS.INF");
+			 return false;
+		 }
 
 		while (cur.neq(s_goal)) {
+			System.out.println("CURRENT IS " + cur.toString());
+
+//			if (getG(s_start) == Double.POSITIVE_INFINITY) {
+//				System.out.println("No Path to Goal : s_start == POS.INF");
+//				return false;
+//			}
+			//System.out.println("while s_start.neq(s_goal)");
+
 			path.add(cur);
+			System.out.println("Added to path: " + cur.toString());
 			n = new LinkedList<State>();
 			n = getSucc(cur);
 
 			if (n.isEmpty()) {
-				System.out.println("No Path to Goal");
+				System.out.println("No Path to Goal : n is empty (get successors)");
 				return false;
 			}
 
+			// check all succesors
+			// find the one with smallest cost and set it as start
 			double cmin = Double.POSITIVE_INFINITY;
 			double tmin = 0;
 			State smin = new State();
 
 			for (State i : n) {
-				double val = calculateCost(cur, i); // Changed cost here to
-													// account for obstacles
-				double val2 = trueDist(i, s_goal) + trueDist(s_start, i);
+				double val = calculateCost(s_start, i); // Changed cost here to
+				// account for obstacles
+				double val2 = trueDist(i, s_goal) + trueDist(cur, i);
 				val += getG(i);
 
+				// if cost is close to pos_inf or previous cmin,
+				// use actual distance, and update min if min distance is less
+				// than tmin
 				if (close(val, cmin)) {
 					if (tmin > val2) {
 						tmin = val2;
 						cmin = val;
 						smin = i;
+						//System.out.println("new start will be " + smin.toString());
 					}
-				} else if (val < cmin) {
+				} else if (val < cmin) { // else if val is less than previous
+											// min, update new min
 					tmin = val2;
 					cmin = val;
 					smin = i;
+					//System.out.println("new start will be " + smin.toString());
 				}
 			}
+			
 			n.clear();
-			cur = new State(smin);
-			// cur = smin;
+			cur = smin;
+			//System.out.println("NEW S_START IS: " + cur.toString());
+//			// cur = smin;
+			//TODO: make rover move, let rover do stuff, wait in the mean time
+			//when rover signals, start again
 		}
 		path.add(s_goal);
 		return true;
@@ -225,51 +262,59 @@ public class DStarLite implements java.io.Serializable {
 	private int computeShortestPath() {
 		LinkedList<State> s = new LinkedList<State>();
 
-		if (openList.isEmpty())
+		if (openList.isEmpty()){
+			//System.out.println("open list is empty, returning 1 from CSP");
 			return 1;
+		}
 
 		int k = 0;
-		while ((!openList.isEmpty()) && (openList.peek().lt(s_start = calculateKey(s_start)))
-				|| (getRHS(s_start) != getG(s_start))) {// inconsistent state
-
+		while ((!openList.isEmpty())
+				&& (openList.peek().lt(s_start = calculateKey(s_start)) || (getRHS(s_start) != getG(s_start)))) {// inconsistent
+																													// state
+			//System.out.println("Enterring while loop in CSP");
 			if (k++ > maxSteps) {
 				System.out.println("At maxsteps");
 				return -1;
 			}
 
-			State u;
+			State u = openList.poll();
 			// check state for inconsistency, a consistent state (no changes)
 			// --> g == rhs
-			boolean test = (getRHS(s_start) != getG(s_start));
+			// boolean test = (getRHS(s_start) != getG(s_start));
 
 			// lazy remove
-			while (true) {
-				if (openList.isEmpty())
-					return 1;
-				u = openList.poll();
+			// while (true) {
+			// if (openList.isEmpty())
+			// return 1;
+			// u = openList.poll();
+			// //isValid checks if state is in openList, in which it returns
+			// true.
+			// if (!isValid(u))
+			// continue;
+			// // if u key is less than current node, and its consistent
+			// if (!(u.lt(s_start)) && (!test))
+			// return 2;
+			// break;
+			// }
 
-				if (!isValid(u))
-					continue;
-				// if u key is less than current node, and its consistent
-				if (!(u.lt(s_start)) && (!test))
-					return 2;
-				break;
-			}
-
-			openHash.remove(u);
+			// openHash.remove(u);
 
 			State k_old = new State(u);
-
+			//System.out.println("Lookint at state: " + u);
 			if (k_old.lt(calculateKey(u))) { // u is out of date
+				//System.out.println("Old key is less than new key");
+				//System.out.println("Inserting to priority key " + u.toString());
 				insert(u);
 			} else if (getG(u) > getRHS(u)) { // needs update (got better)
 				setG(u, getRHS(u));
 				s = getPred(u);
+				//System.out.println("g > rhs, obstacle moved");
 				for (State i : s) {
 					updateVertex(i);
 				}
-			} else { // g <= rhs, state has got worse
+			} else { 
 				setG(u, Double.POSITIVE_INFINITY);
+				//System.out.println("last branch, setting g to inf...updating vertices...");
 				s = getPred(u);
 
 				for (State i : s) {
@@ -296,6 +341,7 @@ public class DStarLite implements java.io.Serializable {
 
 		// Generate the successors, starting at the immediate right,
 		// Moving in a clockwise manner
+		// Set all kesy to -1 for now.
 
 		// EAST
 		tempState = new State(u.getCoord().xpos + 1, u.getCoord().ypos, new Pair<Double, Double>(-1.0, -1.0));
@@ -336,29 +382,29 @@ public class DStarLite implements java.io.Serializable {
 			s.addFirst(tempState);
 		// NORTH
 		tempState = new State(u.getCoord().xpos, u.getCoord().ypos - 1, new Pair<Double, Double>(-1.0, -1.0));
-		if (!occupied(tempState))
+		if (!occupied(tempState)){
 			s.addFirst(tempState);
-
+		}
 		return s;
 	}
 
 	/*
 	 * Update the position of the agent/robot. This does not force a replan.
 	 */
-//	public void updateStart(int x, int y) {
-//		Coord newStart = new Coord(x, y);
-//		s_start.setCoord(newStart);
-//
-//		// k_m += heuristic(s_last,s_start);
-//		k_m += heuristicManhattan(s_last, s_start);
-//
-//		s_start = calculateKey(s_start);
-//		s_last = s_start;
-//	}
-	
-	public void updateStart(Coord coord){
+	// public void updateStart(int x, int y) {
+	// Coord newStart = new Coord(x, y);
+	// s_start.setCoord(newStart);
+	//
+	// // k_m += heuristic(s_last,s_start);
+	// k_m += heuristicManhattan(s_last, s_start);
+	//
+	// s_start = calculateKey(s_start);
+	// s_last = s_start;
+	// }
+
+	public void updateStart(Coord coord) {
 		s_start.setCoord(coord);
-		
+
 		k_m += heuristicManhattan(s_last, s_start);
 
 		s_start = calculateKey(s_start);
@@ -389,7 +435,7 @@ public class DStarLite implements java.io.Serializable {
 		}
 
 		cellHash.clear();
-		openHash.clear();
+		// openHash.clear();
 
 		while (!openList.isEmpty())
 			openList.poll();
@@ -437,10 +483,14 @@ public class DStarLite implements java.io.Serializable {
 				if (tmp2 < tmp)
 					tmp = tmp2;
 			}
-			if (!close(getRHS(u), tmp))
+			//if (!close(getRHS(u), tmp))
 				setRHS(u, tmp);
+				//System.out.println("Updating vertex, new RHS value: " + tmp);
 		}
-
+		if (openList.contains(u)) {
+			openList.remove(u);
+			//System.out.println("removed " + u.toString() + " from openList. Updating Vertex");
+		}
 		if (!close(getG(u), getRHS(u)))
 			insert(u);
 	}
@@ -449,13 +499,13 @@ public class DStarLite implements java.io.Serializable {
 	 * Returns true if state u is on the open list or not by checking if it is
 	 * in the hash table. -uses close, shouldn't be more than .00001 difference
 	 */
-	private boolean isValid(State u) {
-		if (openHash.get(u) == null)
-			return false;
-		if (!close(keyHashCode(u), openHash.get(u)))
-			return false;
-		return true;
-	}
+	// private boolean isValid(State u) {
+	// if (openHash.get(u) == null)
+	// return false;
+	// // if (!close(keyHashCode(u), openHash.get(u)))
+	// // return false;
+	// return true;
+	// }
 
 	/*
 	 * Sets the G value for state u
@@ -478,8 +528,11 @@ public class DStarLite implements java.io.Serializable {
 	 * cells have temporary C1 costs and Manhattan g/heuristic values.
 	 */
 	private void makeNewCell(State u) {
-		if (cellHash.get(u) != null)
+		// TODO: if it's in hash cell check to make sure mt is updated,
+		// otherwise it might crash
+		if (cellHash.get(u) != null) {
 			return;
+		}
 		CellInfo tmp = new CellInfo();
 		tmp.g = tmp.rhs = heuristicManhattan(u, s_goal);
 		tmp.cost = C1;
@@ -505,6 +558,7 @@ public class DStarLite implements java.io.Serializable {
 	 * updateCell, given a mapTile to calculate new cost
 	 */
 	public void updateCell(Coord cellCoordinate, MapTile mt) {
+		//scanElem++;
 		State u = new State();
 		u.setCoord(cellCoordinate);
 		u.setMapTile(mt);
@@ -513,12 +567,30 @@ public class DStarLite implements java.io.Serializable {
 			return;
 
 		makeNewCell(u);
-		if (isObstacle(mt))
-			cellHash.get(u).cost = OBSTACLE_COST;
-		else
-			cellHash.get(u).cost = C1;
-		//for testing
-		//System.out.println("Updated tile @ " + cellCoordinate.toString() + "with cost ==> " + cellHash.get(u).cost); 
+		double oldCost = cellHash.get(u).cost;
+		double newCost = isObstacle(mt) ? OBSTACLE_COST : C1;
+		
+		if(oldCost != newCost){
+			verChanged = true;
+			if (isObstacle(mt))
+				cellHash.get(u).cost = OBSTACLE_COST;
+			else
+				cellHash.get(u).cost = C1;
+			updateVertex(u);
+		}
+		
+		if(scanElem == 4){
+			if(verChanged){
+				k_m += heuristicManhattan(s_last, s_start);
+				s_last = s_start;
+			}
+			scanElem = 0;
+			verChanged = false;
+			computeShortestPath();
+			//System.out.println("Updated last cell...");
+			//System.out.println("New s_last is now s_start: " + s_last.toString());
+		}
+		
 	}
 
 	/*
@@ -538,7 +610,7 @@ public class DStarLite implements java.io.Serializable {
 		// hides the problem...
 		// if ((cur != openHash.end()) && (close(csum,cur->second))) return;
 
-		openHash.put(u, csum);
+		// openHash.put(u, csum);
 		openList.add(u);
 	}
 
@@ -558,7 +630,7 @@ public class DStarLite implements java.io.Serializable {
 		// if the cellHash does not contain the State u
 		if (cellHash.get(u) == null)
 			return false;
-		return (cellHash.get(u).cost < 0);
+		return (cellHash.get(u).cost >= OBSTACLE_COST);
 	}
 
 	/*
@@ -591,32 +663,33 @@ public class DStarLite implements java.io.Serializable {
 
 	// this method gives the cost of moving from state a to state b
 	private double calculateCost(State a, State b) {
-		double accum = 0;
+		// Return cost at each if/else instead of accumulator
+		// double accum = 0;
 		if (b == s_goal)
-			return accum;
-		// check terrain type and wheel type, add 10,000 to cost if it's an
-		// obstacle, including if there's another rover there
-		if (isObstacle(b.mapTile)) {
-			accum = OBSTACLE_COST;
-		} else
-			accum += C1;
-		return accum;
+			return 0;
+		// if there's an obstacle, big cost, else cost is 1
+		if (isObstacle(b.mapTile))
+			return OBSTACLE_COST;
+		else
+			return C1;
 	}
 
 	// true if there's an obstacle i.e another rover, wrong terrain type...
 	private boolean isObstacle(MapTile mt) {
 		boolean obstacle = false;
-		//TODO: double check this
-		if(mt == null)
+		// TODO: double check this
+		if (mt == null)
 			return false;
-		
+
 		if (mt.getHasRover()) {
 			obstacle = true;
-		} else if (rdt == RoverDriveType.WHEELS) {
+		}else if(mt.getTerrain() == Terrain.NONE){ 
+			obstacle = true;
+		}else if (rdt == RoverDriveType.WHEELS) {
 			if (mt.getTerrain() == Terrain.SAND || mt.getTerrain() == Terrain.ROCK)
 				obstacle = true;
 		} else if (rdt == RoverDriveType.TREADS) {
-			if (mt.getTerrain() == Terrain.ROCK)
+			if (mt.getTerrain() == Terrain.ROCK )
 				obstacle = true;
 		} else if (rdt == RoverDriveType.WALKER) {
 			if (mt.getTerrain() == Terrain.SAND)
@@ -663,6 +736,7 @@ public class DStarLite implements java.io.Serializable {
 		}
 
 	}
+
 }
 
 class CellInfo implements java.io.Serializable {
