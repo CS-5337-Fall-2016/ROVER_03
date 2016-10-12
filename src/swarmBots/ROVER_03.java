@@ -217,12 +217,9 @@ public class ROVER_03 {
 			// ***** MOVING *****
 			MapTile[][] scanMapTiles = scanMap.getScanMap();
 			// update/add new mapTiles to dsl hashMaps
-			System.out.println("Updting tiles");
 			updateScannedStates(scanMapTiles, currentLoc);
 			// find path from current node to goal
 			dsl.replan();
-			// System.out.println("Path size is: " + dsl.getPath().size());
-
 			String move = getMoveFromPath(currentLoc);
 			// try to move
 			System.out.println("Requesting to move " + move);
@@ -238,7 +235,6 @@ public class ROVER_03 {
 			}
 			if (line.startsWith("LOC")) {
 				currentLoc = extractLocationFromString(line);
-
 			}
 
 			// test for stuckness - if stuck for too long try switching
@@ -251,13 +247,7 @@ public class ROVER_03 {
 			if (stuckCount >= 10)
 				out.println("MOVE " + move);
 
-			// if
-
-			// System.out.println("ROVER_03 stuck test " + stuck);
 			System.out.println("ROVER_03 blocked test " + blocked);
-
-			// TODO - logic to calculate where to move next
-
 			// this is the Rovers HeartBeat, it regulates how fast the Rover
 			// cycles through the control loop
 			Thread.sleep(sleepTime);
@@ -425,7 +415,6 @@ public class ROVER_03 {
 			pos = pivot - diff;
 		else
 			pos = pivot;
-		// System.out.println("Calculated position: " + pos);
 		return pos;
 	}
 

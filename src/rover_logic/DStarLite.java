@@ -193,16 +193,9 @@ public class DStarLite implements Serializable {
 		}
 
 		while (cur.neq(s_goal)) {
-			System.out.println("CURRENT IS " + cur.toString());
-
-			// if (getG(s_start) == Double.POSITIVE_INFINITY) {
-			// System.out.println("No Path to Goal : s_start == POS.INF");
-			// return false;
-			// }
-			// System.out.println("while s_start.neq(s_goal)");
-
+			//System.out.println("CURRENT IS " + cur.toString());
 			path.add(cur);
-			System.out.println("Added to path: " + cur.toString());
+			//System.out.println("Added to path: " + cur.toString());
 			n = new LinkedList<State>();
 			n = getSucc(cur);
 
@@ -661,8 +654,8 @@ public class DStarLite implements Serializable {
 		pf.updateCell(2, 2, -1);
 		pf.updateCell(3, 0, -1);
 
-		System.out.println("Start node: (0,1)");
-		System.out.println("End node: (3,1)");
+		//System.out.println("Start node: (0,1)");
+		//System.out.println("End node: (3,1)");
 
 		// Time the replanning
 		long begin = System.currentTimeMillis();
