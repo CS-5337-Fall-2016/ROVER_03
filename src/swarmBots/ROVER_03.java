@@ -11,6 +11,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Random;
 
+import javax.swing.GroupLayout.Group;
+
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import com.google.gson.Gson;
@@ -87,6 +89,24 @@ public class ROVER_03 {
 			in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
 			out = new PrintWriter(socket.getOutputStream(), true);
 
+			
+			
+			//setting up the communication setup
+			
+			
+			Group group = new Group(rovername, SERVER_ADDRESS, 53702, RoverDriveType.WHEELS, 
+					RoverToolType.RADIATION_SENSOR);
+
+			/* Setup communication, only communicates with gatherers */
+			rocom = new RoverCommunication(group);
+			rocom.setGroupList(Group.getGatherers());
+
+
+			
+			
+			
+			
+			
 			// Process all messages from server, wait until server requests
 			// Rover ID
 			// name - Return Rover Name to complete connection
