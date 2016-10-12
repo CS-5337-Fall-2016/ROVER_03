@@ -676,16 +676,16 @@ public class ROVER_03 {
 	 */
 	public static void main(String[] args) throws Exception {
 
-		ROVER_03 client;
-		// if a command line argument is included it is used as the map filename
-		// if present uses an IP address instead of localhost
-
-		if (!(args.length == 0)) {
-			client = new ROVER_03(args[0]);
-		} else {
-			client = new ROVER_03();
-		}
-
+		ROVER_03 client = new ROVER_03("localhost");
 		client.run();
+
+
+//		if (!(args.length == 0)) {
+//			client = new ROVER_03(args[0]);
+//		} else {
+//			client = new ROVER_03();
+//		}
+//
+//		client.run();
 	}
 }
