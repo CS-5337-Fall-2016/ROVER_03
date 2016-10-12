@@ -42,6 +42,7 @@ public class ROVER_03 {
 	int sleepTime;
 	String SERVER_ADDRESS = "localhost";
 	static final int SWARM_SERVER_PORT_ADDRESS = 9537;
+	char dirs[] = {'N', 'E', 'S', 'W'};
 
 	ArrayList<String> radioactiveLocations = new ArrayList<String>();
 
@@ -109,16 +110,19 @@ public class ROVER_03 {
 			startLoc = extractLocationFromString(line);			
 		}
 		
+		//movement aStar
+		moveAStar(line, startLoc, targetLoc);
+		
+	}
+	
+	public void moveAStar(String line, Coord startLoc, Coord targetLoc) throws IOException, InterruptedException{
+		
 		Astar astar = new Astar(1000, 1000, startLoc, targetLoc);
 		
 		Coord currentLoc = null;
 		boolean destReached = false;
 		char dir = ' ';
 		int counter = 1;
-
-		char[] dirs = new char[]
-				
-				{'N', 'E', 'S', 'W'};
 		
 		Random rand = new Random();
 		
@@ -204,6 +208,7 @@ public class ROVER_03 {
 			Thread.sleep(sleepTime);
 			System.out.println("ROVER_03 ------------ bottom process control --------------");
 		}
+		
 	}
 	
 	public char getOpposite(char dir) {
@@ -225,11 +230,7 @@ public class ROVER_03 {
 		System.out.println("Opposite of " + dir + " is " + opposite);
 		return opposite;
 	}
-	
-	
-	
 	//for north
-	
 	public char resolveNorth(MapTile[][] scanMapTiles, int centerIndex) {
 		String currentDir = "N";
 		if (!eastBlocked(scanMapTiles, centerIndex))
@@ -240,8 +241,8 @@ public class ROVER_03 {
 			currentDir = "S";
 		return currentDir.charAt(0);
 	}
+	
 	//for south
-
 	public char resolveSouth(MapTile[][] scanMapTiles, int centerIndex) {
 		String currentDir = "S";
 		if (!westBlocked(scanMapTiles, centerIndex))
@@ -280,7 +281,6 @@ public class ROVER_03 {
 	
 	
 	//for northblocked
-	
 	public boolean northBlocked(MapTile[][] scanMapTiles, int centerIndex) {
 		return (scanMapTiles[centerIndex][centerIndex - 1].getHasRover()
 				|| scanMapTiles[centerIndex][centerIndex - 1].getTerrain() == Terrain.ROCK
@@ -290,7 +290,6 @@ public class ROVER_03 {
 
 	
 	//for southblocked
-	
 	public boolean southBlocked(MapTile[][] scanMapTiles, int centerIndex) {
 		return (scanMapTiles[centerIndex][centerIndex + 1].getHasRover()
 				|| scanMapTiles[centerIndex][centerIndex + 1].getTerrain() == Terrain.ROCK
@@ -299,7 +298,6 @@ public class ROVER_03 {
 	}
 
 	//for eastblocked
-	
 	public boolean eastBlocked(MapTile[][] scanMapTiles, int centerIndex) {
 		return (scanMapTiles[centerIndex + 1][centerIndex].getHasRover()
 				|| scanMapTiles[centerIndex + 1][centerIndex].getTerrain() == Terrain.ROCK
@@ -308,8 +306,6 @@ public class ROVER_03 {
 	}
 
 	//for westblocked
-	
-	
 	public boolean westBlocked(MapTile[][] scanMapTiles, int centerIndex) {
 		return (scanMapTiles[centerIndex - 1][centerIndex].getHasRover()
 				|| scanMapTiles[centerIndex - 1][centerIndex].getTerrain() == Terrain.ROCK
@@ -320,9 +316,6 @@ public class ROVER_03 {
 
 	
 	// ####################### Support Methods #############################
-	
-	
-	
 	private void clearReadLineBuffer() throws IOException{
 		while(in.ready()){
 			//System.out.println("ROVER_03 clearing readLine()");
