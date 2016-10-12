@@ -93,14 +93,14 @@ public class ROVER_03 {
 			//setting up the communication setup after cloning processs
 			
 			
-			
-			Group group = new Group(rovername, SERVER_ADDRESS, 53702, RoverDriveType.WHEELS, 
-					RoverToolType.RANGE_BOOTER,RoverToolType.RADIATION_SENSOR);
-
-			/* Setup communication, only communicates with gatherers */
-			rocom = new RoverCommunication(group);
-			rocom.setGroupList(Group.getGatherers());
-			 rocom.ignoreTerrain(Terrain.SAND);
+//			
+//			Group group = new Group(rovername, SERVER_ADDRESS, 53702, RoverDriveType.WHEELS, 
+//					RoverToolType.RANGE_BOOTER,RoverToolType.RADIATION_SENSOR);
+//
+//			/* Setup communication, only communicates with gatherers */
+//			rocom = new RoverCommunication(group);
+//			rocom.setGroupList(Group.getGatherers());
+//			 rocom.ignoreTerrain(Terrain.SAND);
 
 			
 			
