@@ -1,4 +1,4 @@
-package swarmBots;
+package rover_logic;
 import enums.Science;
 import enums.Terrain;
 import enums.RoverToolType;
