@@ -11,7 +11,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Random;
 
-import javax.swing.GroupLayout.Group;
 
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
@@ -91,16 +90,17 @@ public class ROVER_03 {
 
 			
 			
-			//setting up the communication setup
+			//setting up the communication setup after cloning processs
+			
 			
 			
 			Group group = new Group(rovername, SERVER_ADDRESS, 53702, RoverDriveType.WHEELS, 
-					RoverToolType.RADIATION_SENSOR);
+					RoverToolType.RANGE_BOOTER,RoverToolType.RADIATION_SENSOR);
 
 			/* Setup communication, only communicates with gatherers */
 			rocom = new RoverCommunication(group);
 			rocom.setGroupList(Group.getGatherers());
-
+			 rocom.ignoreTerrain(Terrain.SAND);
 
 			
 			
