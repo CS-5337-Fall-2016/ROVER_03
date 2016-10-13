@@ -56,6 +56,11 @@ public class ROVER_03 {
 	// Rover has it's own logic class
 	public static DStarLite dsl;
 	private boolean initializedDSL = false;
+	//Communication variables
+	Communication comms;
+	private String corpSecret = "gz5YhL70a2";
+	private String url = "http://localhost:3000/api";
+
 
 	public ROVER_03() {
 		System.out.println("ROVER_03 rover object constructed");
@@ -102,19 +107,13 @@ public class ROVER_03 {
 			}
 
 			// ********* Rover logic setup *********
-
 			String line = "";
 			Coord rovergroupStartPosition = null;
 			Coord targetLocation = null;
-
-			/**
-			 * Get initial values that won't change
-			 */
 			// **** get equipment listing ****
 			equipment = new ArrayList<String>();
 			equipment = getEquipment();
 			System.out.println(rovername + " equipment list results " + equipment + "\n");
-
 			// **** Request START_LOC Location from SwarmServer ****
 			out.println("START_LOC");
 			line = in.readLine();
@@ -126,7 +125,6 @@ public class ROVER_03 {
 				rovergroupStartPosition = extractLocationFromString(line);
 			}
 			System.out.println(rovername + " START_LOC " + rovergroupStartPosition);
-
 			// **** Request TARGET_LOC Location from SwarmServer ****
 			out.println("TARGET_LOC");
 			line = in.readLine();
@@ -138,12 +136,14 @@ public class ROVER_03 {
 				targetLocation = extractLocationFromString(line);
 			}
 			System.out.println(rovername + " TARGET_LOC " + targetLocation);
+			//Instantiate Communications
+			comms = new Communication(url, rovername, corpSecret);
 
 			/*****************************************************
 			 * MOVEMENT METHODS ASTAR OR DSTAR -- COMMENT OUT ONE
 			 * ***************************************************/
-			//moveDStar(line, rovergroupStartPosition, targetLocation);
-			moveAStar(line, rovergroupStartPosition, targetLocation);
+			moveDStar(line, rovergroupStartPosition, targetLocation);
+			//moveAStar(line, rovergroupStartPosition, targetLocation);
 
 			// This catch block closes the open socket connection to the server
 		} catch (Exception e) {
@@ -378,16 +378,10 @@ public class ROVER_03 {
 	public void moveDStar(String line, Coord start, Coord target) throws Exception {
 		Coord curTarget = target;
 		dsl = new DStarLite(RoverDriveType.getEnum(equipment.get(0)));
-		;
-		// boolean goingForward = true;
-		boolean stuck = false; // just means it did not change locations between
-								// requests,
+		boolean stuck = false; 
 		boolean blocked = false;// could be velocity limit or obstruction etc.
-
-		// int currentDirection = getRandom(cardinals.length);
 		Coord currentLoc = null;
 		Coord previousLoc = null;
-		// int stepCount = 0;
 		int stuckCount = 0;
 
 		/**
@@ -404,7 +398,6 @@ public class ROVER_03 {
 			if (line.startsWith("LOC")) {
 				// loc = line.substring(4);
 				currentLoc = extractLocationFromString(line);
-
 			}
 			if (initializedDSL)
 				dsl.updateStart(currentLoc);
@@ -429,14 +422,13 @@ public class ROVER_03 {
 			doScan();
 			// prints the scanMap to the Console output for debug purposes
 			scanMap.debugPrintMap();
-
 			// ***** get TIMER remaining *****
 			checkTime(line);
-
-			// ***** MOVING *****
 			MapTile[][] scanMapTiles = scanMap.getScanMap();
 			// update/add new mapTiles to dsl hashMaps
 			updateScannedStates(scanMapTiles, currentLoc);
+			//post scanned tiles to global map
+			comms.postScanMapTiles(currentLoc, scanMapTiles);
 			// find path from current node to goal
 			dsl.replan();
 			char move = getMoveFromPath(currentLoc);
