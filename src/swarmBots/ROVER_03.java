@@ -11,7 +11,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Random;
 
-
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import com.google.gson.Gson;
@@ -101,11 +100,6 @@ public class ROVER_03 {
 //			rocom = new RoverCommunication(group);
 //			rocom.setGroupList(Group.getGatherers());
 //			 rocom.ignoreTerrain(Terrain.SAND);
-
-			
-			
-			
-			
 			
 			// Process all messages from server, wait until server requests
 			// Rover ID
