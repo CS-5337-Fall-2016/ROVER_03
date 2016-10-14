@@ -209,7 +209,7 @@ public class ROVER_03 {
 			//implement findpath
 			
 			if (!destReached) {
-				dir = astar.findPath(currentLoc, targetLoc, RoverDriveType.WHEELS);
+				dir = astar.findPath(currentLoc, targetLoc, RoverDriveType.getEnum(equipment.get(0)));
 			} else {
 				if (counter % 20 == 0) {
 					List<String> dirsCons = new ArrayList<>();
