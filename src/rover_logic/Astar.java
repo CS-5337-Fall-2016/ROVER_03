@@ -15,12 +15,16 @@ import common.ScanMap;
 public class Astar extends PlanetMap
 {
     protected boolean[][][] explored;
-    protected Communication com;
+    String url = "http://localhost:3000/api";
+    String corp_secret = "gz5YhL70a2";
+    String rovername = "ROVER_03";
+    protected Communication com = new Communication(url, rovername, corp_secret);
     
     
 	private static class MyRunnable implements Runnable
 	{
-	private final Communication com;
+	
+    private final Communication com;
 	private final Coord centerpos;
 	private final MapTile[][] mapArray;
 		
