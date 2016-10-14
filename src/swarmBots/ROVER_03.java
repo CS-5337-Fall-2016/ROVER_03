@@ -201,15 +201,15 @@ public class ROVER_03 {
 			System.out.println("ROVER_03 equipment list results " + equipment + "\n");
 
 			this.doScan();
-			astar.addScanMap(scanMap, currentLoc, RoverToolType.RADIATION_SENSOR, RoverToolType.RANGE_BOOTER); // this																										
-			astar.debugPrintRevealCounts(currentLoc, RoverToolType.RADIATION_SENSOR, RoverToolType.RANGE_BOOTER);
+			astar.addScanMap(scanMap, currentLoc, RoverToolType.getEnum(equipment.get(1)), RoverToolType.getEnum(equipment.get(2))); // this																										
+			astar.debugPrintRevealCounts(currentLoc, RoverToolType.getEnum(equipment.get(1)), RoverToolType.getEnum(equipment.get(2)));
 			scanMap.debugPrintMap();
 			
 			//codition if reached
 			//implement findpath
 			
 			if (!destReached) {
-				dir = astar.findPath(currentLoc, targetLoc, RoverDriveType.WHEELS);
+				dir = astar.findPath(currentLoc, targetLoc, RoverDriveType.getEnum(equipment.get(0)));
 			} else {
 				if (counter % 20 == 0) {
 					List<String> dirsCons = new ArrayList<>();
