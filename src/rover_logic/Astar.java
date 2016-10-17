@@ -18,7 +18,8 @@ public class Astar extends PlanetMap
     String url = "http://localhost:3000/api";
     String corp_secret = "gz5YhL70a2";
     String rovername = "ROVER_03";
-    protected Communication com = new Communication(url, rovername, corp_secret);
+
+	protected Communication com = new Communication(url, rovername, corp_secret);
     
     
 	private static class MyRunnable implements Runnable
@@ -192,4 +193,9 @@ public class Astar extends PlanetMap
         }
         return false;
     }
+    
+    public Communication getCom() {
+		return com;
+	}
+
 }

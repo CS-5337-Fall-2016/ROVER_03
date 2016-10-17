@@ -7,6 +7,7 @@ import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.net.Socket;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
@@ -30,13 +31,17 @@ import enums.Science;
 import rover_logic.Astar;
 import rover_logic.DStarLite;
 import rover_logic.State;
-
+import supportTools.CommunicationHelper;
 
 /**
  * The seed that this program is built on is a chat program example found here:
  * http://cs.lmu.edu/~ray/notes/javanetexamples/ Many thanks to the authors for
  * publishing their code examples
  */
+
+//TODO: Update destinations - Coords that we can reach to extract science
+//TODO: Update global map
+//TODO: 
 
 public class ROVER_03 {
 
@@ -50,24 +55,27 @@ public class ROVER_03 {
 	ArrayList<String> radioactiveLocations = new ArrayList<String>();
 	static final int PORT_ADDRESS = 9537;
 	// Keep personal map when traversing - upload for each movement
-	public static Map<Coord, MapTile> globalMap;
+	public static Map<Coord, MapTile> globalMap = new HashMap<Coord, MapTile>();
 	char cardinals[] = { 'N', 'E', 'S', 'W' };
 	List<String> equipment;
 	// Rover has it's own logic class
 	public static DStarLite dsl;
+	// List of destinations to travel to i.e. science targets
+	List<Coord> destinations = new ArrayList<Coord>();
 	private boolean initializedDSL = false;
-	//Communication variables
+	// Communication variables
 	Communication comms;
 	private String corpSecret = "gz5YhL70a2";
 	private String url = "http://localhost:3000/api";
-
+	long steps = 1;
 
 	public ROVER_03() {
 		System.out.println("ROVER_03 rover object constructed");
 		rovername = "ROVER_03";
 		SERVER_ADDRESS = "localhost";
-		// in milliseconds - smaller is faster, but the server will cut connection if too small
-		sleepTime = 300; 
+		// in milliseconds - smaller is faster, but the server will cut
+		// connection if too small
+		sleepTime = 300;
 	}
 
 	public ROVER_03(String serverAddress) {
@@ -83,8 +91,8 @@ public class ROVER_03 {
 	 * Connects to the swarm server then enters the processing loop.
 	 */
 	private void run() throws IOException, InterruptedException {
-	
-			// Make connection to SwarmServer and initialize streams
+
+		// Make connection to SwarmServer and initialize streams
 		Socket socket = null;
 		try {
 			socket = new Socket(SERVER_ADDRESS, PORT_ADDRESS);
@@ -136,14 +144,14 @@ public class ROVER_03 {
 				targetLocation = extractLocationFromString(line);
 			}
 			System.out.println(rovername + " TARGET_LOC " + targetLocation);
-			//Instantiate Communications
+			// Instantiate Communications
 			comms = new Communication(url, rovername, corpSecret);
 
 			/*****************************************************
 			 * MOVEMENT METHODS ASTAR OR DSTAR -- COMMENT OUT ONE
-			 * ***************************************************/
-			moveDStar(line, rovergroupStartPosition, targetLocation);
-			//moveAStar(line, rovergroupStartPosition, targetLocation);
+			 ***************************************************/
+			// moveDStar(line, rovergroupStartPosition, targetLocation);
+			moveAStar(line, rovergroupStartPosition, targetLocation);
 
 			// This catch block closes the open socket connection to the server
 		} catch (Exception e) {
@@ -160,24 +168,24 @@ public class ROVER_03 {
 		}
 
 	}
-	
+
 	/*****************************
 	 * A_STAR STUFF
 	 ****************************/
-	
-	public void moveAStar(String line, Coord startLoc, Coord targetLoc) throws IOException, InterruptedException{
-		
+
+	public void moveAStar(String line, Coord startLoc, Coord targetLoc) throws IOException, InterruptedException {
+
 		Astar astar = new Astar(1000, 1000, startLoc, targetLoc);
-		
+
 		Coord currentLoc = null;
 		boolean destReached = false;
 		char dir = ' ';
 		int counter = 1;
-		
+
 		Random rand = new Random();
-		
+
 		while (true) {
-			
+
 			// **** location call ****
 			out.println("LOC");
 			line = in.readLine();
@@ -188,11 +196,12 @@ public class ROVER_03 {
 			if (line.startsWith("LOC")) {
 				currentLoc = extractLocationFromString(line);
 			}
-			
+
 			if (currentLoc.equals(targetLoc)) {
 				destReached = true;
+				System.out.println("Destination reached");
 			}
-			
+
 			System.out.println("Current Loc: " + currentLoc.toString());
 
 			// **** get equipment listing ****
@@ -201,66 +210,74 @@ public class ROVER_03 {
 			System.out.println("ROVER_03 equipment list results " + equipment + "\n");
 
 			this.doScan();
-			astar.addScanMap(scanMap, currentLoc, RoverToolType.getEnum(equipment.get(1)), RoverToolType.getEnum(equipment.get(2))); // this																										
-			astar.debugPrintRevealCounts(currentLoc, RoverToolType.getEnum(equipment.get(1)), RoverToolType.getEnum(equipment.get(2)));
+			astar.addScanMap(scanMap, currentLoc, RoverToolType.getEnum(equipment.get(1)),
+					RoverToolType.getEnum(equipment.get(2))); // this
+//			astar.debugPrintRevealCounts(currentLoc, RoverToolType.getEnum(equipment.get(1)),
+//					RoverToolType.getEnum(equipment.get(2)));
 			scanMap.debugPrintMap();
-			
-			//codition if reached
-			//implement findpath
-			
+			//every 10 steps, get update from global map
+			if(steps % 5 == 0)
+				updateglobalMap(astar.getCom().getGlobalMap());
+			//walk
 			if (!destReached) {
 				dir = astar.findPath(currentLoc, targetLoc, RoverDriveType.getEnum(equipment.get(0)));
 			} else {
-				if (counter % 20 == 0) {
-					List<String> dirsCons = new ArrayList<>();
-					char dirOpposite = getOpposite(dir);
-					for (int i = 0; i < cardinals.length; i++) {
-						if (cardinals[i] != dirOpposite) {
-							dirsCons.add(String.valueOf(cardinals[i]));
-						}
-					}
-					dir = dirsCons.get(rand.nextInt(3)).charAt(0);					
-				}
-				counter++;
-				MapTile[][] scanMapTiles = scanMap.getScanMap();
-				int centerIndex = (scanMap.getEdgeSize() - 1) / 2;
-				System.out.println(dir);
-				switch (dir) {
-				case 'N':
-					if (northBlocked(scanMapTiles, centerIndex)) {
-						dir = resolveNorth(scanMapTiles, centerIndex);
-					}
-					break;
-				case 'S':
-					if (southBlocked(scanMapTiles, centerIndex)) {
-						dir = resolveSouth(scanMapTiles, centerIndex);
-					}
-					break;
-				case 'E':
-					System.out.println("E");
-					if (eastBlocked(scanMapTiles, centerIndex)) {
-						dir = resolveEast(scanMapTiles, centerIndex);
-					}
-					break;
-				case 'W':
-					System.out.println("W");
-					if (westBlocked(scanMapTiles, centerIndex)) {
-						dir = resolveWest(scanMapTiles, centerIndex);
-					}
-					break;
-				}
-				System.out.println("Going: " + dir);
+				dir = wander(line, dir);
 			}
 			if (dir != 'U') {
 				out.println("MOVE " + dir);
 			}
-				
+			steps++;
 			Thread.sleep(sleepTime);
 			System.out.println("ROVER_03 ------------ bottom process control --------------");
 		}
-		
+
 	}
-	
+
+	public char wander(String line, char dir) {
+		Random rand = new Random();
+		if (steps % 20 == 0) {
+			List<String> dirsCons = new ArrayList<>();
+			char dirOpposite = getOpposite(dir);
+			for (int i = 0; i < cardinals.length; i++) {
+				if (cardinals[i] != dirOpposite) {
+					dirsCons.add(String.valueOf(cardinals[i]));
+				}
+			}
+			dir = dirsCons.get(rand.nextInt(3)).charAt(0);
+		}
+		steps++;
+		MapTile[][] scanMapTiles = scanMap.getScanMap();
+		int centerIndex = (scanMap.getEdgeSize() - 1) / 2;
+		System.out.println(dir);
+		switch (dir) {
+		case 'N':
+			if (northBlocked(scanMapTiles, centerIndex)) {
+				dir = resolveNorth(scanMapTiles, centerIndex);
+			}
+			break;
+		case 'S':
+			if (southBlocked(scanMapTiles, centerIndex)) {
+				dir = resolveSouth(scanMapTiles, centerIndex);
+			}
+			break;
+		case 'E':
+			System.out.println("E");
+			if (eastBlocked(scanMapTiles, centerIndex)) {
+				dir = resolveEast(scanMapTiles, centerIndex);
+			}
+			break;
+		case 'W':
+			System.out.println("W");
+			if (westBlocked(scanMapTiles, centerIndex)) {
+				dir = resolveWest(scanMapTiles, centerIndex);
+			}
+			break;
+		}
+		System.out.println("Going: " + dir);
+		return dir;
+	}
+
 	public char getOpposite(char dir) {
 		char opposite = ' ';
 		switch (dir) {
@@ -280,7 +297,8 @@ public class ROVER_03 {
 		System.out.println("Opposite of " + dir + " is " + opposite);
 		return opposite;
 	}
-	//for north
+
+	// for north
 	public char resolveNorth(MapTile[][] scanMapTiles, int centerIndex) {
 		String currentDir = "N";
 		if (!eastBlocked(scanMapTiles, centerIndex))
@@ -291,8 +309,8 @@ public class ROVER_03 {
 			currentDir = "S";
 		return currentDir.charAt(0);
 	}
-	
-	//for south
+
+	// for south
 	public char resolveSouth(MapTile[][] scanMapTiles, int centerIndex) {
 		String currentDir = "S";
 		if (!westBlocked(scanMapTiles, centerIndex))
@@ -305,7 +323,7 @@ public class ROVER_03 {
 		return currentDir.charAt(0);
 	}
 
-	//east
+	// east
 	public char resolveEast(MapTile[][] scanMapTiles, int centerIndex) {
 		String currentDir = "E";
 		if (!southBlocked(scanMapTiles, centerIndex))
@@ -317,7 +335,7 @@ public class ROVER_03 {
 		return currentDir.charAt(0);
 	}
 
-	//west
+	// west
 	public char resolveWest(MapTile[][] scanMapTiles, int centerIndex) {
 		String currentDir = "W";
 		if (!northBlocked(scanMapTiles, centerIndex))
@@ -328,9 +346,8 @@ public class ROVER_03 {
 			currentDir = "E";
 		return currentDir.charAt(0);
 	}
-	
-	
-	//for northblocked
+
+	// for northblocked
 	public boolean northBlocked(MapTile[][] scanMapTiles, int centerIndex) {
 		return (scanMapTiles[centerIndex][centerIndex - 1].getHasRover()
 				|| scanMapTiles[centerIndex][centerIndex - 1].getTerrain() == Terrain.ROCK
@@ -338,8 +355,7 @@ public class ROVER_03 {
 				|| scanMapTiles[centerIndex][centerIndex - 1].getTerrain() == Terrain.SAND);
 	}
 
-	
-	//for southblocked
+	// for southblocked
 	public boolean southBlocked(MapTile[][] scanMapTiles, int centerIndex) {
 		return (scanMapTiles[centerIndex][centerIndex + 1].getHasRover()
 				|| scanMapTiles[centerIndex][centerIndex + 1].getTerrain() == Terrain.ROCK
@@ -347,7 +363,7 @@ public class ROVER_03 {
 				|| scanMapTiles[centerIndex][centerIndex + 1].getTerrain() == Terrain.SAND);
 	}
 
-	//for eastblocked
+	// for eastblocked
 	public boolean eastBlocked(MapTile[][] scanMapTiles, int centerIndex) {
 		return (scanMapTiles[centerIndex + 1][centerIndex].getHasRover()
 				|| scanMapTiles[centerIndex + 1][centerIndex].getTerrain() == Terrain.ROCK
@@ -355,7 +371,7 @@ public class ROVER_03 {
 				|| scanMapTiles[centerIndex + 1][centerIndex].getTerrain() == Terrain.SAND);
 	}
 
-	//for westblocked
+	// for westblocked
 	public boolean westBlocked(MapTile[][] scanMapTiles, int centerIndex) {
 		return (scanMapTiles[centerIndex - 1][centerIndex].getHasRover()
 				|| scanMapTiles[centerIndex - 1][centerIndex].getTerrain() == Terrain.ROCK
@@ -363,7 +379,7 @@ public class ROVER_03 {
 				|| scanMapTiles[centerIndex - 1][centerIndex].getTerrain() == Terrain.SAND);
 	}
 
- // END of Rover main control loop
+	// END of Rover main control loop
 
 	// ####################### Support Methods #############################
 
@@ -378,7 +394,7 @@ public class ROVER_03 {
 	public void moveDStar(String line, Coord start, Coord target) throws Exception {
 		Coord curTarget = target;
 		dsl = new DStarLite(RoverDriveType.getEnum(equipment.get(0)));
-		boolean stuck = false; 
+		boolean stuck = false;
 		boolean blocked = false;// could be velocity limit or obstruction etc.
 		Coord currentLoc = null;
 		Coord previousLoc = null;
@@ -427,8 +443,8 @@ public class ROVER_03 {
 			MapTile[][] scanMapTiles = scanMap.getScanMap();
 			// update/add new mapTiles to dsl hashMaps
 			updateScannedStates(scanMapTiles, currentLoc);
-			//post scanned tiles to global map
-			comms.postScanMapTiles(currentLoc, scanMapTiles);
+			// post scanned tiles to global map
+			// comms.postScanMapTiles(currentLoc, scanMapTiles);
 			// find path from current node to goal
 			dsl.replan();
 			char move = getMoveFromPath(currentLoc);
@@ -466,7 +482,7 @@ public class ROVER_03 {
 			System.out.println("ROVER_03 ------------ bottom process control --------------");
 		}
 	}
-	
+
 	public void checkTime(String line) throws IOException {
 		out.println("TIMER");
 		line = in.readLine();
@@ -550,15 +566,50 @@ public class ROVER_03 {
 		else
 			return cardinals[0];
 	}
+
 	/**********
 	 * End D_Star
 	 ********/
-	
+
 	// ####################### Support Methods #############################
-	private void clearReadLineBuffer() throws IOException{
-		while(in.ready()){
-			//System.out.println("ROVER_03 clearing readLine()");
-			in.readLine();	
+	private void clearReadLineBuffer() throws IOException {
+		while (in.ready()) {
+			// System.out.println("ROVER_03 clearing readLine()");
+			in.readLine();
+		}
+	}
+
+	/**************************
+	 * Communications Functions
+	 ***************************/
+	// get data from server and update field map
+	private void updateglobalMap(JSONArray data) {
+
+		for (Object o : data) {
+
+			JSONObject jsonObj = (JSONObject) o;
+			boolean marked = (jsonObj.get("g") != null) ? true : false;
+			int x = (int) (long) jsonObj.get("x");
+			int y = (int) (long) jsonObj.get("y");
+			Coord coord = new Coord(x, y);
+
+			// only bother to save if our globalMap doesn't contain the
+			// coordinate
+			if (!globalMap.containsKey(coord)) {
+				MapTile tile = CommunicationHelper.convertToMapTile(jsonObj);
+
+				// if tile has science AND is not in sand
+				if (tile.getScience() != Science.NONE && tile.getTerrain() != Terrain.SAND && 
+						tile.getTerrain() != Terrain.ROCK && tile.getTerrain() != Terrain.NONE) {
+					// then add to the destination
+					if (!destinations.contains(coord) && !marked){
+						System.out.println("#####ADDED NEW DESTINATION!!!!! : " + coord.toString());
+						destinations.add(coord);
+					}
+				}
+
+				globalMap.put(coord, tile);
+			}
 		}
 	}
 
@@ -579,11 +630,6 @@ public class ROVER_03 {
 
 		if (jsonEqListIn.startsWith("EQUIPMENT")) {
 			while (!(jsonEqListIn = in.readLine()).equals("EQUIPMENT_END")) {
-				// if (jsonEqListIn == null) {
-				// break;
-				// }
-				// System.out.println("ROVER_03 incomming EQUIPMENT result: " +
-				// jsonEqListIn);
 				jsonEqList.append(jsonEqListIn);
 				jsonEqList.append("\n");
 				// System.out.println("ROVER_03 doScan() bottom of while");
@@ -633,14 +679,7 @@ public class ROVER_03 {
 			return; // server response did not start with "SCAN"
 		}
 		// System.out.println("ROVER_03 finished scan while");
-
 		String jsonScanMapString = jsonScanMap.toString();
-		// debug print json object to a file
-		// new MyWriter( jsonScanMapString, 0); //gives a strange result -
-		// prints the \n instead of newline character in the file
-
-		// System.out.println("ROVER_03 convert from json back to ScanMap
-		// class");
 		// convert from the json string back to a ScanMap object
 		scanMap = gson.fromJson(jsonScanMapString, ScanMap.class);
 	}
@@ -661,7 +700,6 @@ public class ROVER_03 {
 		}
 		return null;
 	}
-
 
 	/**
 	 * Runs the client
