@@ -84,7 +84,13 @@ public class Astar extends PlanetMap
                     Science oldScience = this.getTile(i-(scan.getEdgeSize()/2)+centerpos.xpos, j-(scan.getEdgeSize()/2)+centerpos.ypos).getScience();
                     if((mask[0] && !tileExplored[0]) || mapArray[i][j].getScience() != Science.NONE || (mask[1] && oldScience == Science.RADIOACTIVE) || (mask[2] && oldScience == Science.ORGANIC) || (oldScience == Science.MINERAL) || (mask[4] && oldScience == Science.CRYSTAL)) {
                         this.setTile(mapArray[i][j].getCopyOfMapTile(), i-(scan.getEdgeSize()/2)+centerpos.xpos, j-(scan.getEdgeSize()/2)+centerpos.ypos);
-                        globalMap.put(new Coord( i-(scan.getEdgeSize()/2)+centerpos.xpos, j-(scan.getEdgeSize()/2)+centerpos.ypos),mapArray[i][j].getCopyOfMapTile());
+                        Coord tempC = new Coord(i-(scan.getEdgeSize()/2)+centerpos.xpos, j-(scan.getEdgeSize()/2)+centerpos.ypos);
+                        if(globalMap.get(tempC) == null){
+                            globalMap.put(tempC, mapArray[i][j].getCopyOfMapTile());
+                        }else{
+                        	//else make sure to replace the tile, and not add another value to it. 
+                            globalMap.replace(tempC, globalMap.get(tempC), mapArray[i][j].getCopyOfMapTile());
+                        }
                     }
                     for(int m = 0; m < 5; m++) { //mask the explored array with our mask, to show we've covered such and such sensors.
                         explored[i-(scan.getEdgeSize()/2)+centerpos.xpos][j-(scan.getEdgeSize()/2)+centerpos.ypos][m] = mask[m] || explored[i-(scan.getEdgeSize()/2)+centerpos.xpos][j-(scan.getEdgeSize()/2)+centerpos.ypos][m];
