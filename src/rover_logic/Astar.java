@@ -207,7 +207,7 @@ public class Astar extends PlanetMap
     }
 
     public boolean blocked(Coord pos, RoverDriveType drive) {
-    	System.out.println("checcking: " + pos.toString());
+    	//System.out.println("checcking: " + pos.toString());
         Terrain ter = this.getTile(pos).getTerrain();
 		if(this.getTile(pos).getHasRover()) {
 			return true;
@@ -236,9 +236,11 @@ public class Astar extends PlanetMap
         	MapTile tile = entry.getValue();
         	Coord coord = entry.getKey();
             if(globalMap.get(coord) == null){
-                this.setTile(tile, coord.xpos, coord.ypos);
-                System.out.println("Setting tile in " + entry.getKey().toString() +" tile: " + tile.getTerrain().getTerString());
-                globalMap.put(coord, tile);
+            	if(coord.xpos >= 0 && coord.ypos >= 0){
+            		//System.out.println("Setting tile in " + entry.getKey().toString() +" tile: " + tile.getTerrain().getTerString());
+            		this.setTile(tile, coord.xpos, coord.ypos);
+            		globalMap.put(coord, tile);
+            	}
             }
         }
     }
