@@ -211,7 +211,7 @@ public class ROVER_03 {
 					RoverToolType.getEnum(equipment.get(2))); // this
 			scanMap.debugPrintMap();
 			//every 5 steps, get update from global map
-			if(steps % 5 == 0){
+			if(steps % 5 == 1){
 				updateglobalMap(astar.getCom().getGlobalMap());
 				//if(steps == 5)
 				astar.updatePlanet(globalMap);
