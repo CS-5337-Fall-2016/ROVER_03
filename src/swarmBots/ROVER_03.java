@@ -180,9 +180,6 @@ public class ROVER_03 {
 		Coord currentLoc = null;
 		boolean destReached = false;
 		char dir = ' ';
-		int counter = 1;
-
-		Random rand = new Random();
 
 		while (true) {
 
@@ -212,12 +209,13 @@ public class ROVER_03 {
 			this.doScan();
 			astar.addScanMap(scanMap, currentLoc, RoverToolType.getEnum(equipment.get(1)),
 					RoverToolType.getEnum(equipment.get(2))); // this
-//			astar.debugPrintRevealCounts(currentLoc, RoverToolType.getEnum(equipment.get(1)),
-//					RoverToolType.getEnum(equipment.get(2)));
 			scanMap.debugPrintMap();
-			//every 10 steps, get update from global map
-			if(steps % 5 == 0)
+			//every 5 steps, get update from global map
+			if(steps % 5 == 0){
 				updateglobalMap(astar.getCom().getGlobalMap());
+				//if(steps == 5)
+				astar.updatePlanet(globalMap);
+			}
 			//walk
 			if (!destReached) {
 				dir = astar.findPath(currentLoc, targetLoc, RoverDriveType.getEnum(equipment.get(0)));
@@ -378,10 +376,6 @@ public class ROVER_03 {
 				|| scanMapTiles[centerIndex - 1][centerIndex].getTerrain() == Terrain.NONE
 				|| scanMapTiles[centerIndex - 1][centerIndex].getTerrain() == Terrain.SAND);
 	}
-
-	// END of Rover main control loop
-
-	// ####################### Support Methods #############################
 
 	public int getRandom(int length) {
 		Random random = new Random();
@@ -607,10 +601,11 @@ public class ROVER_03 {
 						destinations.add(coord);
 					}
 				}
-
+				//System.out.println("adding to " + coord.toString() + " the tile " + tile.toString());
 				globalMap.put(coord, tile);
-			}
+			}//else update tile instead of just disregarding it?
 		}
+		//System.out.println("map continats " + globalMap.size() + " tiles!");
 	}
 
 	// method to retrieve a list of the rover's EQUIPMENT from the server

@@ -4,6 +4,10 @@ import enums.Terrain;
 import enums.RoverToolType;
 import enums.RoverDriveType;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
 import common.Communication;
 import common.Coord;
 import common.MapTile;
@@ -18,6 +22,10 @@ public class Astar extends PlanetMap
     String url = "http://localhost:3000/api";
     String corp_secret = "gz5YhL70a2";
     String rovername = "ROVER_03";
+    Map<Coord, MapTile> globalMap = new HashMap<Coord, MapTile>();
+    //only search up to known map
+    // int maxKnownX = 100;
+    // int maxKnownY = 100;
 
 	protected Communication com = new Communication(url, rovername, corp_secret);
     
@@ -76,6 +84,7 @@ public class Astar extends PlanetMap
                     Science oldScience = this.getTile(i-(scan.getEdgeSize()/2)+centerpos.xpos, j-(scan.getEdgeSize()/2)+centerpos.ypos).getScience();
                     if((mask[0] && !tileExplored[0]) || mapArray[i][j].getScience() != Science.NONE || (mask[1] && oldScience == Science.RADIOACTIVE) || (mask[2] && oldScience == Science.ORGANIC) || (oldScience == Science.MINERAL) || (mask[4] && oldScience == Science.CRYSTAL)) {
                         this.setTile(mapArray[i][j].getCopyOfMapTile(), i-(scan.getEdgeSize()/2)+centerpos.xpos, j-(scan.getEdgeSize()/2)+centerpos.ypos);
+                        globalMap.put(new Coord( i-(scan.getEdgeSize()/2)+centerpos.xpos, j-(scan.getEdgeSize()/2)+centerpos.ypos),mapArray[i][j].getCopyOfMapTile());
                     }
                     for(int m = 0; m < 5; m++) { //mask the explored array with our mask, to show we've covered such and such sensors.
                         explored[i-(scan.getEdgeSize()/2)+centerpos.xpos][j-(scan.getEdgeSize()/2)+centerpos.ypos][m] = mask[m] || explored[i-(scan.getEdgeSize()/2)+centerpos.xpos][j-(scan.getEdgeSize()/2)+centerpos.ypos][m];
@@ -153,31 +162,46 @@ public class Astar extends PlanetMap
             }
             openSet.remove(current);
             closedSet.add(current);
-            Coord[] neighbors = new Coord[4];
-            neighbors[0] = new Coord(current.xpos, current.ypos-1);
-            neighbors[1] = new Coord(current.xpos+1, current.ypos);
-            neighbors[2] = new Coord(current.xpos, current.ypos+1);
-            neighbors[3] = new Coord(current.xpos-1, current.ypos);
-            for(int i  = 0; i < 4; i++) {
-                if(!closedSet.contains(neighbors[i])) {
+
+            List<Coord> neighbors = getNeighbors(current);
+            for(int i  = 0; i < neighbors.size(); i++) {
+                if(!closedSet.contains(neighbors.get(i))) {
                     int tentativegScore = gScore[current.xpos][current.ypos];
-                    if(blocked(neighbors[i], drive)) {
+                    if(blocked(neighbors.get(i), drive)) {
                         tentativegScore += 10000;
                     } else {
                         tentativegScore += 1;
                     }
-                    if(!openSet.contains(neighbors[i])) {
-                        openSet.add(neighbors[i]);
-                        cameFrom[neighbors[i].xpos][neighbors[i].ypos] = current;
-                        gScore[neighbors[i].xpos][neighbors[i].ypos] = tentativegScore;
-                        fScore[neighbors[i].xpos][neighbors[i].ypos] = tentativegScore + Math.abs(neighbors[i].xpos-dest.xpos)+Math.abs(neighbors[i].ypos-dest.ypos);
+                    if(!openSet.contains(neighbors.get(i))) {
+                        openSet.add(neighbors.get(i));
+                        cameFrom[neighbors.get(i).xpos][neighbors.get(i).ypos] = current;
+                        gScore[neighbors.get(i).xpos][neighbors.get(i).ypos] = tentativegScore;
+                        fScore[neighbors.get(i).xpos][neighbors.get(i).ypos] = tentativegScore + Math.abs(neighbors.get(i).xpos-dest.xpos)+Math.abs(neighbors.get(i).ypos-dest.ypos);
                     }
                 }
             }
         }
         return 'U'; //destination is unreachable
     }
+
+    //Get neighbors for each coord, must be within bounds, and less than 10000 or we'll step forever
+    public List<Coord> getNeighbors(Coord current){
+        List<Coord> neighbors  = new ArrayList<Coord>();
+        if(current.ypos - 1 >= 0)
+            neighbors.add(new Coord(current.xpos, current.ypos-1));
+
+        //need to find a way to check neighbors only within bounds for now...let it keep going
+        neighbors.add(new Coord(current.xpos+1, current.ypos));
+        neighbors.add(new Coord(current.xpos, current.ypos+1));
+
+        if(current.xpos - 1 >= 0)
+            neighbors.add(new Coord(current.xpos-1, current.ypos));
+        
+        return neighbors;
+    }
+
     public boolean blocked(Coord pos, RoverDriveType drive) {
+    	System.out.println("checcking: " + pos.toString());
         Terrain ter = this.getTile(pos).getTerrain();
 		if(this.getTile(pos).getHasRover()) {
 			return true;
@@ -197,5 +221,20 @@ public class Astar extends PlanetMap
     public Communication getCom() {
 		return com;
 	}
+
+    //This method takes in globalMap from rover (hashMap) and updates corresponding tiles on this map.
+    public void updatePlanet(Map<Coord, MapTile> map){
+        //iterate through each object in hashMap
+        for(Map.Entry<Coord, MapTile> entry : map.entrySet()){
+            //Set map tile using setter in PlanetMap
+        	MapTile tile = entry.getValue();
+        	Coord coord = entry.getKey();
+            if(globalMap.get(coord) == null){
+                this.setTile(tile, coord.xpos, coord.ypos);
+                System.out.println("Setting tile in " + entry.getKey().toString() +" tile: " + tile.getTerrain().getTerString());
+                globalMap.put(coord, tile);
+            }
+        }
+    }
 
 }
