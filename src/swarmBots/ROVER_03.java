@@ -30,6 +30,7 @@ import enums.RoverToolType;
 import enums.Science;
 import rover_logic.Astar;
 import rover_logic.DStarLite;
+import rover_logic.SearchLogic;
 import rover_logic.State;
 import supportTools.CommunicationHelper;
 
@@ -68,6 +69,8 @@ public class ROVER_03 {
 	private String corpSecret = "gz5YhL70a2";
 	private String url = "http://localhost:3000/api";
 	long steps = 1;
+	int maxX = 0; //Furthest x coordinate traveled
+	int maxY = 0; //Furthest y coordinate traveled
 
 	public ROVER_03() {
 		System.out.println("ROVER_03 rover object constructed");
@@ -146,6 +149,34 @@ public class ROVER_03 {
 			System.out.println(rovername + " TARGET_LOC " + targetLocation);
 			// Instantiate Communications
 			comms = new Communication(url, rovername, corpSecret);
+			
+			//Couldn't use this as too much threads
+//			int scanEdge = scanMap.getEdgeSize();
+//			for (int i = scanEdge; i <= scanEdge * 50; i+=scanEdge) {
+//			
+//					destinations.add(new Coord(i,i)); 	
+//					destinations.add(new Coord(i*2,i)); 	
+//					destinations.add(new Coord(i,i*2)); 	
+//				
+//			}
+//			System.out.println(destinations);
+			
+			//Adding random list of coordinates
+			destinations.add(new Coord(7,14));
+			destinations.add(new Coord(14,7)); 	
+			destinations.add(new Coord(7,21)); 	
+			destinations.add(new Coord(21,7)); 
+			destinations.add(new Coord(7,28)); 
+			destinations.add(new Coord(28,7)); 
+			destinations.add(new Coord(7,35)); 
+			destinations.add(new Coord(35,7)); 
+			destinations.add(new Coord(7,42)); 
+			destinations.add(new Coord(42,7)); 
+			destinations.add(new Coord(7,49)); 
+			destinations.add(new Coord(49,7)); 
+			
+//			
+			targetLocation = new Coord(7,7);
 
 			/*****************************************************
 			 * MOVEMENT METHODS ASTAR OR DSTAR -- COMMENT OUT ONE
@@ -179,7 +210,7 @@ public class ROVER_03 {
 
 		Coord currentLoc = null;
 		boolean destReached = false;
-		char dir = ' ';
+		char dir = ' '; 
 
 		while (true) {
 
@@ -220,10 +251,46 @@ public class ROVER_03 {
 			if (!destReached) {
 				dir = astar.findPath(currentLoc, targetLoc, RoverDriveType.getEnum(equipment.get(0)));
 			} else {
-				dir = wander(line, dir);
+				//dir = wander(line, dir);
+				
+				// Get coordinates for each corner of the rover's scanner
+//				int scannerEdge = scanMap.getEdgeSize();				
+//				Coord scanNW = new Coord(currentLoc.xpos - scannerEdge, currentLoc.ypos - scannerEdge);
+//				Coord scanNE = new Coord(currentLoc.xpos + scannerEdge, currentLoc.ypos - scannerEdge);
+//				Coord scanSE = new Coord(currentLoc.xpos + scannerEdge, currentLoc.ypos + scannerEdge);
+//				Coord scanSW = new Coord(currentLoc.xpos - scannerEdge, currentLoc.ypos + scannerEdge);
+//				Coord scanN = new Coord(currentLoc.xpos, currentLoc.ypos - scannerEdge);
+//				Coord scanE = new Coord(currentLoc.xpos + scannerEdge, currentLoc.ypos);
+//				Coord scanS = new Coord(currentLoc.xpos, currentLoc.ypos + scannerEdge);
+//				Coord scanW = new Coord(currentLoc.xpos - scannerEdge, currentLoc.ypos);
+								
+//				if (globalMap.get(scanNW) == null)
+				
+//				targetLoc = new Coord(0, 0);
+//				
+//				dir = astar.findPath(currentLoc, targetLoc, RoverDriveType.getEnum(equipment.get(0)));
+
+				
+				if (!destinations.isEmpty()) {
+
+					targetLoc = destinations.get(0);
+					destinations.remove(0);
+									
+					destReached = false;
+					dir = astar.findPath(currentLoc, targetLoc, RoverDriveType.getEnum(equipment.get(0)));
+				}
+
 			}
 			if (dir != 'U') {
 				out.println("MOVE " + dir);
+				
+				// Update furthest travelled x and y coordinates (to roughly estimate size of map)
+				if (targetLoc.xpos > maxX) {
+					maxX = targetLoc.xpos;
+				}
+				if (targetLoc.ypos > maxY) {
+					maxY = targetLoc.ypos;
+				}
 			}
 			steps++;
 			Thread.sleep(sleepTime);
