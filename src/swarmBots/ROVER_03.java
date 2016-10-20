@@ -12,6 +12,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Random;
 import java.util.Stack;
+import java.util.concurrent.TimeUnit;
 
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
@@ -87,7 +88,7 @@ public class ROVER_03 {
 		System.out.println("ROVER_03 rover object constructed");
 		rovername = "ROVER_03";
 		SERVER_ADDRESS = serverAddress;
-		sleepTime = 200; // in milliseconds - smaller is faster, but the server
+		sleepTime = 300; // in milliseconds - smaller is faster, but the server
 							// will cut connection if it is too small
 	}
 
@@ -181,7 +182,7 @@ public class ROVER_03 {
 //			destinations.add(new Coord(49,7)); 
 			
 //			
-			//targetLocation = new Coord(7,7);
+			targetLocation = new Coord(3,3);
 
 			/*****************************************************
 			 * MOVEMENT METHODS ASTAR OR DSTAR -- COMMENT OUT ONE
@@ -219,7 +220,7 @@ public class ROVER_03 {
 		boolean stuck = false;
 		int stuckCount = 0;
 		char dir = ' ';
-		destinations.add(targetLoc);
+		//destinations.add(targetLoc);
 		while (true) {
 
 			// **** location call ****
@@ -255,12 +256,13 @@ public class ROVER_03 {
 				System.out.println("A star to " + targetLoc.toString());
 				updateMinMax(currentLoc);
 				dir = astar.findPath(currentLoc, targetLoc, RoverDriveType.getEnum(equipment.get(0)));
-				Thread.sleep(200);
+				
+				Thread.sleep(300);
 			} else {
 				//dir = wander(line, dir);
-				if (destinations.isEmpty()) {
+				if (!destinations.isEmpty()) {
 					System.out.println("Adding new destinations!!!...");
-					//destinations.remove(0);
+					destinations.remove(0);
 					Coord newDest = new Coord(maxX, maxY);
 					//here we add the four corners
 					if(first == 1){
