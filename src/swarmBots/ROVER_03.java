@@ -236,6 +236,8 @@ public class ROVER_03 {
 			if (dir != 'U') {
 				out.println("MOVE " + dir);
 				System.out.println("DEBUG: MOVING TOWARDS COORD " + targetLoc);
+			}else{
+				targetLoc = newTargetLoc();
 			}
 			
 			

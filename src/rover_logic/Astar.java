@@ -175,6 +175,10 @@ public class Astar extends PlanetMap
                     int tentativegScore = gScore[current.xpos][current.ypos];
                     if(blocked(neighbors.get(i), drive)) {
                         tentativegScore += 10000;
+                        if(neighbors.get(i).equals(dest)){
+                        	System.out.println("target is a obstacle");
+                        	return 'U';
+                        }
                     } else {
                         tentativegScore += 1;
                     }
