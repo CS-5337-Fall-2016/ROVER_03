@@ -11,6 +11,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
+import java.util.Stack;
 
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
@@ -58,11 +59,11 @@ public class ROVER_03 {
 	// Keep personal map when traversing - upload for each movement
 	public static Map<Coord, MapTile> globalMap = new HashMap<Coord, MapTile>();
 	char cardinals[] = { 'N', 'E', 'S', 'W' };
-	List<String> equipment;
+	List<String> equipment = new ArrayList<String>();
 	// Rover has it's own logic class
 	public static DStarLite dsl;
 	// List of destinations to travel to i.e. science targets
-	List<Coord> destinations = new ArrayList<Coord>();
+	Stack<Coord> destinations = new Stack<Coord>();
 	private boolean initializedDSL = false;
 	// Communication variables
 	Communication comms;
@@ -150,6 +151,10 @@ public class ROVER_03 {
 			// Instantiate Communications
 			comms = new Communication(url, rovername, corpSecret);
 			
+			// **** get equipment listing ****
+			equipment = getEquipment();
+			System.out.println("ROVER_03 equipment list results " + equipment + "\n");
+			
 			//Couldn't use this as too much threads
 //			int scanEdge = scanMap.getEdgeSize();
 //			for (int i = scanEdge; i <= scanEdge * 50; i+=scanEdge) {
@@ -162,21 +167,21 @@ public class ROVER_03 {
 //			System.out.println(destinations);
 			
 			//Adding random list of coordinates
-			destinations.add(new Coord(7,14));
-			destinations.add(new Coord(14,7)); 	
-			destinations.add(new Coord(7,21)); 	
-			destinations.add(new Coord(21,7)); 
-			destinations.add(new Coord(7,28)); 
-			destinations.add(new Coord(28,7)); 
-			destinations.add(new Coord(7,35)); 
-			destinations.add(new Coord(35,7)); 
-			destinations.add(new Coord(7,42)); 
-			destinations.add(new Coord(42,7)); 
-			destinations.add(new Coord(7,49)); 
-			destinations.add(new Coord(49,7)); 
+//			destinations.add(new Coord(7,14));
+//			destinations.add(new Coord(14,7)); 	
+//			destinations.add(new Coord(7,21)); 	
+//			destinations.add(new Coord(21,7)); 
+//			destinations.add(new Coord(7,28)); 
+//			destinations.add(new Coord(28,7)); 
+//			destinations.add(new Coord(7,35)); 
+//			destinations.add(new Coord(35,7)); 
+//			destinations.add(new Coord(7,42)); 
+//			destinations.add(new Coord(42,7)); 
+//			destinations.add(new Coord(7,49)); 
+//			destinations.add(new Coord(49,7)); 
 			
 //			
-			targetLocation = new Coord(7,7);
+			//targetLocation = new Coord(7,7);
 
 			/*****************************************************
 			 * MOVEMENT METHODS ASTAR OR DSTAR -- COMMENT OUT ONE
@@ -207,11 +212,14 @@ public class ROVER_03 {
 	public void moveAStar(String line, Coord startLoc, Coord targetLoc) throws IOException, InterruptedException {
 
 		Astar astar = new Astar(1000, 1000, startLoc, targetLoc);
-
+		int first = 1;
 		Coord currentLoc = null;
+		Coord previousLoc = null;
 		boolean destReached = false;
-		char dir = ' '; 
-
+		boolean stuck = false;
+		int stuckCount = 0;
+		char dir = ' ';
+		destinations.add(targetLoc);
 		while (true) {
 
 			// **** location call ****
@@ -224,18 +232,13 @@ public class ROVER_03 {
 			if (line.startsWith("LOC")) {
 				currentLoc = extractLocationFromString(line);
 			}
-
+			previousLoc = currentLoc;
 			if (currentLoc.equals(targetLoc)) {
 				destReached = true;
-				System.out.println("Destination reached");
+				System.out.println("Destination REACHED!!!");
 			}
 
 			System.out.println("Current Loc: " + currentLoc.toString());
-
-			// **** get equipment listing ****
-			ArrayList<String> equipment = new ArrayList<String>();
-			equipment = getEquipment();
-			System.out.println("ROVER_03 equipment list results " + equipment + "\n");
 
 			this.doScan();
 			astar.addScanMap(scanMap, currentLoc, RoverToolType.getEnum(equipment.get(1)),
@@ -244,59 +247,77 @@ public class ROVER_03 {
 			//every 5 steps, get update from global map
 			if(steps % 5 == 1){
 				updateglobalMap(astar.getCom().getGlobalMap());
-				//if(steps == 5)
 				astar.updatePlanet(globalMap);
 			}
 			//walk
 			if (!destReached) {
+				//updateMinMax
+				System.out.println("A star to " + targetLoc.toString());
+				updateMinMax(currentLoc);
 				dir = astar.findPath(currentLoc, targetLoc, RoverDriveType.getEnum(equipment.get(0)));
+				Thread.sleep(200);
 			} else {
 				//dir = wander(line, dir);
-				
-				// Get coordinates for each corner of the rover's scanner
-//				int scannerEdge = scanMap.getEdgeSize();				
-//				Coord scanNW = new Coord(currentLoc.xpos - scannerEdge, currentLoc.ypos - scannerEdge);
-//				Coord scanNE = new Coord(currentLoc.xpos + scannerEdge, currentLoc.ypos - scannerEdge);
-//				Coord scanSE = new Coord(currentLoc.xpos + scannerEdge, currentLoc.ypos + scannerEdge);
-//				Coord scanSW = new Coord(currentLoc.xpos - scannerEdge, currentLoc.ypos + scannerEdge);
-//				Coord scanN = new Coord(currentLoc.xpos, currentLoc.ypos - scannerEdge);
-//				Coord scanE = new Coord(currentLoc.xpos + scannerEdge, currentLoc.ypos);
-//				Coord scanS = new Coord(currentLoc.xpos, currentLoc.ypos + scannerEdge);
-//				Coord scanW = new Coord(currentLoc.xpos - scannerEdge, currentLoc.ypos);
-								
-//				if (globalMap.get(scanNW) == null)
-				
-//				targetLoc = new Coord(0, 0);
-//				
-//				dir = astar.findPath(currentLoc, targetLoc, RoverDriveType.getEnum(equipment.get(0)));
-
-				
 				if (!destinations.isEmpty()) {
-
-					targetLoc = destinations.get(0);
+					System.out.println("Adding new destinations!!!...");
 					destinations.remove(0);
-									
+					Coord newDest = new Coord(maxX, maxY);
+					//here we add the four corners
+					if(first == 1){
+						destinations.push(newDest);
+						destinations.push(new Coord(maxX,0));
+						destinations.push(new Coord(0,0));
+						destinations.push(new Coord(0, maxY));
+						destinations.push(new Coord( (int)maxX/2, (int)maxY/2));
+					}
+					first++;
+					targetLoc = destinations.pop();
+					System.out.println("TRAVELING TO: " + targetLoc.toString());
 					destReached = false;
-					dir = astar.findPath(currentLoc, targetLoc, RoverDriveType.getEnum(equipment.get(0)));
+					dir = astar.findPath(currentLoc, targetLoc, RoverDriveType.getEnum(equipment.get(0))); 
+					System.out.println("Should be false: -> " + destReached);
 				}
 
+			}
+			if(destReached && destinations.empty()){
+				dir = wander(line, dir);
+				System.out.println("Wandering...");
 			}
 			if (dir != 'U') {
 				out.println("MOVE " + dir);
-				
-				// Update furthest travelled x and y coordinates (to roughly estimate size of map)
-				if (targetLoc.xpos > maxX) {
-					maxX = targetLoc.xpos;
-				}
-				if (targetLoc.ypos > maxY) {
-					maxY = targetLoc.ypos;
-				}
+			}else{
+				System.out.println("A Star returned U");
+				System.out.println("No path -- getting new destination");
+				targetLoc = destinations.pop();
+				destinations.remove(0);
 			}
+			
+			
 			steps++;
 			Thread.sleep(sleepTime);
 			System.out.println("ROVER_03 ------------ bottom process control --------------");
 		}
 
+	}
+	
+	//Update min max from each scan
+	public void updateMinMax(Coord current){
+		MapTile[][] scanMapTiles = scanMap.getScanMap();
+		int centerRow = (scanMapTiles.length - 1) / 2;
+		for(int row = 0; row < scanMapTiles.length; row++){
+			for(int col = 0; col < scanMapTiles.length; col++){
+				int xPos = findCoordinate(col, current.xpos, centerRow);
+				int yPos = findCoordinate(row, current.ypos, centerRow);
+				//look at eac tile and update min/max if it's not a "NULL" value
+				//to make sure we stay inside the map when updating target.
+				if(scanMapTiles[col][row].getTerrain() != Terrain.NONE ){
+					if(xPos > current.xpos)
+						maxX = xPos;
+					if(yPos > current.ypos)
+						maxY= yPos;
+				}
+			}
+		}
 	}
 
 	public char wander(String line, char dir) {
