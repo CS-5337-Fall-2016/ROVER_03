@@ -156,33 +156,9 @@ public class ROVER_03 {
 			equipment = getEquipment();
 			System.out.println("ROVER_03 equipment list results " + equipment + "\n");
 			
-			//Couldn't use this as too much threads
-//			int scanEdge = scanMap.getEdgeSize();
-//			for (int i = scanEdge; i <= scanEdge * 50; i+=scanEdge) {
-//			
-//					destinations.add(new Coord(i,i)); 	
-//					destinations.add(new Coord(i*2,i)); 	
-//					destinations.add(new Coord(i,i*2)); 	
-//				
-//			}
-//			System.out.println(destinations);
-			
-			//Adding random list of coordinates
-//			destinations.add(new Coord(7,14));
-//			destinations.add(new Coord(14,7)); 	
-//			destinations.add(new Coord(7,21)); 	
-//			destinations.add(new Coord(21,7)); 
-//			destinations.add(new Coord(7,28)); 
-//			destinations.add(new Coord(28,7)); 
-//			destinations.add(new Coord(7,35)); 
-//			destinations.add(new Coord(35,7)); 
-//			destinations.add(new Coord(7,42)); 
-//			destinations.add(new Coord(42,7)); 
-//			destinations.add(new Coord(7,49)); 
-//			destinations.add(new Coord(49,7)); 
-			
-//			
-			targetLocation = new Coord(3,3);
+			// Make initial destination coord to travel southeast of its scanner range
+			// This is to better maximize its scouting for larger maxX and maxY
+			targetLocation = new Coord(rovergroupStartPosition.xpos + 3, rovergroupStartPosition.ypos + 3);
 
 			/*****************************************************
 			 * MOVEMENT METHODS ASTAR OR DSTAR -- COMMENT OUT ONE
@@ -257,7 +233,7 @@ public class ROVER_03 {
 				updateMinMax(currentLoc);
 				dir = astar.findPath(currentLoc, targetLoc, RoverDriveType.getEnum(equipment.get(0)));
 				
-				Thread.sleep(300);
+				Thread.sleep(sleepTime);
 			} 
 			else {
 				if (destinations.isEmpty()) {	//if destinations list is empty, add more coords to scout
@@ -293,7 +269,7 @@ public class ROVER_03 {
 					System.out.println("DEBUG: TRAVELING TO " + targetLoc.toString());
 					System.out.println("DEBUG: destReached should be false: -> " + destReached);
 					
-					Thread.sleep(300);
+					Thread.sleep(sleepTime);
 				}
 
 			}
@@ -550,7 +526,7 @@ public class ROVER_03 {
 			// try to move
 			System.out.println("Requesting to move " + move);
 			out.println("MOVE " + move);
-			Thread.sleep(300);
+			Thread.sleep(sleepTime);
 
 			// another call for current location
 			out.println("LOC");
