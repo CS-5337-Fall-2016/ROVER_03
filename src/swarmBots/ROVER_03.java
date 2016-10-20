@@ -258,9 +258,9 @@ public class ROVER_03 {
 				Thread.sleep(200);
 			} else {
 				//dir = wander(line, dir);
-				if (!destinations.isEmpty()) {
+				if (destinations.isEmpty()) {
 					System.out.println("Adding new destinations!!!...");
-					destinations.remove(0);
+					//destinations.remove(0);
 					Coord newDest = new Coord(maxX, maxY);
 					//here we add the four corners
 					if(first == 1){
@@ -686,7 +686,7 @@ public class ROVER_03 {
 					// then add to the destination
 					if (!destinations.contains(coord) && !marked){
 						System.out.println("#####ADDED NEW DESTINATION!!!!! : " + coord.toString());
-						destinations.add(coord);
+						//destinations.add(coord); //### Commenting this out for now so mapping can work without hindrance
 					}
 				}
 				//System.out.println("adding to " + coord.toString() + " the tile " + tile.toString());
