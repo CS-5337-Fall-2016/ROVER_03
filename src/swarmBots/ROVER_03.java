@@ -229,9 +229,10 @@ public class ROVER_03 {
 				updateMinMax(currentLoc);
 				dir = astar.findPath(currentLoc, targetLoc, RoverDriveType.getEnum(equipment.get(0)));
 			} else {
-				//dir = wander(line, dir);
-				targetLoc = newTargetLoc();
-				dir = astar.findPath(currentLoc, targetLoc, RoverDriveType.getEnum(equipment.get(0)));
+				dir = wander(line, dir);	//Until we can fix mapping function, we will use 'wander' function
+				
+//				targetLoc = newTargetLoc();
+//				dir = astar.findPath(currentLoc, targetLoc, RoverDriveType.getEnum(equipment.get(0)));
 			}
 			if (dir != 'U') {
 				out.println("MOVE " + dir);
