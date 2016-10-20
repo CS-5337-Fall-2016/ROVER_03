@@ -228,10 +228,12 @@ public class ROVER_03 {
 				dir = astar.findPath(currentLoc, targetLoc, RoverDriveType.getEnum(equipment.get(0)));
 			} else {
 				//dir = wander(line, dir);
-				dir = astar.findPath(currentLoc, newTargetLoc(), RoverDriveType.getEnum(equipment.get(0)));
+				targetLoc = newTargetLoc();
+				dir = astar.findPath(currentLoc, targetLoc, RoverDriveType.getEnum(equipment.get(0)));
 			}
 			if (dir != 'U') {
 				out.println("MOVE " + dir);
+				System.out.println("DEBUG: MOVING TOWARDS COORD " + targetLoc);
 			}
 			steps++;
 			Thread.sleep(sleepTime);
@@ -242,6 +244,8 @@ public class ROVER_03 {
 	
 	public Coord newTargetLoc() {
 		if (destinations.empty()) {	//if destinations list is empty, add more coordinates		
+			
+			System.out.println("DEBUG: Adding more coordinates to destinations list.");
 			Coord newDest = new Coord(maxX, maxY);
 			destinations.push(newDest);
 			destinations.push(new Coord(maxX,0));
