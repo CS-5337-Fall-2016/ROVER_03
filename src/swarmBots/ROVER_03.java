@@ -220,7 +220,7 @@ public class ROVER_03 {
 		boolean stuck = false;
 		int stuckCount = 0;
 		char dir = ' ';
-		//destinations.add(targetLoc);
+		destinations.add(targetLoc);
 		while (true) {
 
 			// **** location call ****
@@ -253,48 +253,62 @@ public class ROVER_03 {
 			//walk
 			if (!destReached) {
 				//updateMinMax
-				System.out.println("A star to " + targetLoc.toString());
+				System.out.println("DEBUG: A star to " + targetLoc.toString());
 				updateMinMax(currentLoc);
 				dir = astar.findPath(currentLoc, targetLoc, RoverDriveType.getEnum(equipment.get(0)));
 				
 				Thread.sleep(300);
-			} else {
-				//dir = wander(line, dir);
+			} 
+			else {
 				if (!destinations.isEmpty()) {
-					System.out.println("Adding new destinations!!!...");
-					destinations.remove(0);
+
 					Coord newDest = new Coord(maxX, maxY);
+										
 					//here we add the four corners
-					if(first == 1){
+					if (first == 1){
+						destinations.pop(); //Remove the very first targetLoc
+						
+						System.out.println("DEBUG: Adding corner destinations.");
 						destinations.push(newDest);
 						destinations.push(new Coord(maxX,0));
-						destinations.push(new Coord(0,0));
+						destinations.push(new Coord(0, 0));
+						destinations.push(new Coord(0, maxY));
+						destinations.push(new Coord( (int)maxX/2, (int)maxY/2));
+						first++;
+					}
+					else {
+						System.out.println("DEBUG: Adding new destinations based on new maxX and maxY.");
+						destinations.push(newDest);
+						destinations.push(new Coord(maxX,0));
 						destinations.push(new Coord(0, maxY));
 						destinations.push(new Coord( (int)maxX/2, (int)maxY/2));
 					}
-					first++;
+					
 					targetLoc = destinations.pop();
-					System.out.println("TRAVELING TO: " + targetLoc.toString());
+					
 					destReached = false;
 					dir = astar.findPath(currentLoc, targetLoc, RoverDriveType.getEnum(equipment.get(0))); 
-					System.out.println("Should be false: -> " + destReached);
+					
+					System.out.println("DEBUG: TRAVELING TO " + targetLoc.toString());
+					System.out.println("DEBUG: destReached should be false: -> " + destReached);
+					
+					Thread.sleep(500);
 				}
 
 			}
 			if(destReached && destinations.empty()){
 				dir = wander(line, dir);
-				System.out.println("Wandering...");
+				System.out.println("DEBUG: Wandering...");
 			}
 			if (dir != 'U') {
 				out.println("MOVE " + dir);
-			}else{
-				System.out.println("A Star returned U");
-				System.out.println("No path -- getting new destination");
-				targetLoc = destinations.pop();
-				destinations.remove(0);
 			}
-			
-			
+			else {
+				System.out.println("DEBUG: A Star returned U. No path -- getting new destination");
+				targetLoc = destinations.pop();
+				//destinations.remove(0);
+			}
+						
 			steps++;
 			Thread.sleep(sleepTime);
 			System.out.println("ROVER_03 ------------ bottom process control --------------");
@@ -687,7 +701,7 @@ public class ROVER_03 {
 						tile.getTerrain() != Terrain.ROCK && tile.getTerrain() != Terrain.NONE) {
 					// then add to the destination
 					if (!destinations.contains(coord) && !marked){
-						System.out.println("#####ADDED NEW DESTINATION!!!!! : " + coord.toString());
+						//System.out.println("#####ADDED NEW DESTINATION!!!!! : " + coord.toString());
 						//destinations.add(coord); //### Commenting this out for now so mapping can work without hindrance
 					}
 				}
