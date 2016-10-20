@@ -11,6 +11,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
+import java.util.Stack;
 
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
@@ -61,13 +62,15 @@ public class ROVER_03 {
 	// Rover has it's own logic class
 	public static DStarLite dsl;
 	// List of destinations to travel to i.e. science targets
-	List<Coord> destinations = new ArrayList<Coord>();
+	Stack<Coord> destinations = new Stack<Coord>();
 	private boolean initializedDSL = false;
 	// Communication variables
 	Communication comms;
 	private String corpSecret = "gz5YhL70a2";
 	private String url = "http://localhost:3000/api";
 	long steps = 1;
+	int maxX;
+	int maxY;
 
 	public ROVER_03() {
 		System.out.println("ROVER_03 rover object constructed");
@@ -83,7 +86,7 @@ public class ROVER_03 {
 		System.out.println("ROVER_03 rover object constructed");
 		rovername = "ROVER_03";
 		SERVER_ADDRESS = serverAddress;
-		sleepTime = 200; // in milliseconds - smaller is faster, but the server
+		sleepTime = 300; // in milliseconds - smaller is faster, but the server
 							// will cut connection if it is too small
 	}
 
@@ -146,6 +149,9 @@ public class ROVER_03 {
 			System.out.println(rovername + " TARGET_LOC " + targetLocation);
 			// Instantiate Communications
 			comms = new Communication(url, rovername, corpSecret);
+			
+			// First destination coordinate for mapping. Will be SE corner of rover's scanner range
+			targetLocation = new Coord(rovergroupStartPosition.xpos + 3, rovergroupStartPosition.ypos + 3);
 
 			/*****************************************************
 			 * MOVEMENT METHODS ASTAR OR DSTAR -- COMMENT OUT ONE
@@ -218,9 +224,11 @@ public class ROVER_03 {
 			}
 			//walk
 			if (!destReached) {
+				updateMinMax(currentLoc);
 				dir = astar.findPath(currentLoc, targetLoc, RoverDriveType.getEnum(equipment.get(0)));
 			} else {
-				dir = wander(line, dir);
+				//dir = wander(line, dir);
+				dir = astar.findPath(currentLoc, newTargetLoc(), RoverDriveType.getEnum(equipment.get(0)));
 			}
 			if (dir != 'U') {
 				out.println("MOVE " + dir);
@@ -230,6 +238,38 @@ public class ROVER_03 {
 			System.out.println("ROVER_03 ------------ bottom process control --------------");
 		}
 
+	}
+	
+	public Coord newTargetLoc() {
+		if (destinations.empty()) {	//if destinations list is empty, add more coordinates		
+			Coord newDest = new Coord(maxX, maxY);
+			destinations.push(newDest);
+			destinations.push(new Coord(maxX,0));
+			destinations.push(new Coord(0, maxY));
+			destinations.push(new Coord( (int)maxX/2, (int)maxY/2));
+		}
+		
+		return destinations.pop();
+	}
+	
+	//Update min max from each scan
+	public void updateMinMax(Coord current){
+	    MapTile[][] scanMapTiles = scanMap.getScanMap();
+	    int centerRow = (scanMapTiles.length - 1) / 2;
+	    for(int row = 0; row < scanMapTiles.length; row++){
+	        for(int col = 0; col < scanMapTiles.length; col++){
+	            int xPos = findCoordinate(col, current.xpos, centerRow);
+	            int yPos = findCoordinate(row, current.ypos, centerRow);
+	            //look at eac tile and update min/max if it's not a "NULL" value
+	            //to make sure we stay inside the map when updating target.
+	            if(scanMapTiles[col][row].getTerrain() != Terrain.NONE ){
+	                if(xPos > current.xpos)
+	                    maxX = xPos;
+	                if(yPos > current.ypos)
+	                    maxY= yPos;
+	            }
+	        }
+	    }
 	}
 
 	public char wander(String line, char dir) {
@@ -445,7 +485,7 @@ public class ROVER_03 {
 			// try to move
 			System.out.println("Requesting to move " + move);
 			out.println("MOVE " + move);
-			Thread.sleep(300);
+			Thread.sleep(sleepTime);
 
 			// another call for current location
 			out.println("LOC");
@@ -597,8 +637,9 @@ public class ROVER_03 {
 						tile.getTerrain() != Terrain.ROCK && tile.getTerrain() != Terrain.NONE) {
 					// then add to the destination
 					if (!destinations.contains(coord) && !marked){
-						System.out.println("#####ADDED NEW DESTINATION!!!!! : " + coord.toString());
-						destinations.add(coord);
+						//### TODO: COMMENTING TO TEST MAPPING. Will need to uncomment when programming gathering functions
+//						System.out.println("#####ADDED NEW DESTINATION!!!!! : " + coord.toString());
+//						destinations.add(coord);
 					}
 				}
 				//System.out.println("adding to " + coord.toString() + " the tile " + tile.toString());
