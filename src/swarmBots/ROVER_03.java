@@ -220,7 +220,7 @@ public class ROVER_03 {
 		boolean stuck = false;
 		int stuckCount = 0;
 		char dir = ' ';
-		destinations.add(targetLoc);
+		//destinations.add(targetLoc);
 		while (true) {
 
 			// **** location call ****
@@ -260,13 +260,13 @@ public class ROVER_03 {
 				Thread.sleep(300);
 			} 
 			else {
-				if (!destinations.isEmpty()) {
+				if (destinations.isEmpty()) {	//if destinations list is empty, add more coords to scout
 
 					Coord newDest = new Coord(maxX, maxY);
 										
 					//here we add the four corners
 					if (first == 1){
-						destinations.pop(); //Remove the very first targetLoc
+						//destinations.pop(); //Remove the very first targetLoc
 						
 						System.out.println("DEBUG: Adding corner destinations.");
 						destinations.push(newDest);
@@ -287,12 +287,13 @@ public class ROVER_03 {
 					targetLoc = destinations.pop();
 					
 					destReached = false;
+					
 					dir = astar.findPath(currentLoc, targetLoc, RoverDriveType.getEnum(equipment.get(0))); 
 					
 					System.out.println("DEBUG: TRAVELING TO " + targetLoc.toString());
 					System.out.println("DEBUG: destReached should be false: -> " + destReached);
 					
-					Thread.sleep(500);
+					Thread.sleep(300);
 				}
 
 			}
