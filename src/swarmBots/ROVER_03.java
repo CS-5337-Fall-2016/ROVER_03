@@ -155,7 +155,7 @@ public class ROVER_03 {
 			
 
 			// First destination coordinate for mapping. Will be SE corner of rover's scanner range
-			targetLocation = new Coord(rovergroupStartPosition.xpos + 3, rovergroupStartPosition.ypos + 3);
+			//targetLocation = new Coord(rovergroupStartPosition.xpos + 3, rovergroupStartPosition.ypos + 3);
 
 
 			/*****************************************************
@@ -184,17 +184,17 @@ public class ROVER_03 {
 	 * A_STAR STUFF
 	 ****************************/
 
+	@SuppressWarnings("unused")
 	public void moveAStar(String line, Coord startLoc, Coord targetLoc) throws IOException, InterruptedException {
 
 		Astar astar = new Astar(1000, 1000, startLoc, targetLoc);
-		int first = 1;
+		//int first = 1;
 		Coord currentLoc = null;
 		Coord previousLoc = null;
 		boolean destReached = false;
-		boolean stuck = false;
-		int stuckCount = 0;
 		char dir = ' ';
-		destinations.add(targetLoc);
+		destinations.push(targetLoc);
+		
 		while (true) {
 
 			// **** location call ****
@@ -211,6 +211,7 @@ public class ROVER_03 {
 			if (currentLoc.equals(targetLoc)) {
 				destReached = true;
 				System.out.println("Destination REACHED!!!");
+				System.out.println("Destionatins left: " + destinations.size());
 			}
 
 			System.out.println("Current Loc: " + currentLoc.toString());
@@ -221,7 +222,7 @@ public class ROVER_03 {
 			scanMap.debugPrintMap();
 			//every 5 steps, get update from global map
 			if(steps % 5 == 1){
-				updateglobalMap(astar.getCom().getGlobalMap());
+				//updateglobalMap(astar.getCom().getGlobalMap());
 				astar.updatePlanet(globalMap);
 			}
 			//walk
@@ -229,16 +230,21 @@ public class ROVER_03 {
 				updateMinMax(currentLoc);
 				dir = astar.findPath(currentLoc, targetLoc, RoverDriveType.getEnum(equipment.get(0)));
 			} else {
-				dir = wander(line, dir);	//Until we can fix mapping function, we will use 'wander' function
+				//dir = wander(line, dir);	//Until we can fix mapping function, we will use 'wander' function
 				
-//				targetLoc = newTargetLoc();
-//				dir = astar.findPath(currentLoc, targetLoc, RoverDriveType.getEnum(equipment.get(0)));
+				targetLoc = newTargetLoc();
+				steps++;
+				destReached = false;
+				Thread.sleep(sleepTime);
+				System.out.println("Switched target, skipping to new loop iteration...");
+				continue;
 			}
 			if (dir != 'U') {
 				out.println("MOVE " + dir);
 				System.out.println("DEBUG: MOVING TOWARDS COORD " + targetLoc);
 			}else{
 				targetLoc = newTargetLoc();
+				System.out.println("Unreachable target, SWITCHING TARGETS");
 			}
 			
 			
@@ -252,14 +258,14 @@ public class ROVER_03 {
 	public Coord newTargetLoc() {
 		if (destinations.empty()) {	//if destinations list is empty, add more coordinates		
 			
-			System.out.println("DEBUG: Adding more coordinates to destinations list.");
+			System.out.println(">>>>>>>>DEBUG: Adding more coordinates to destinations list.");
 			Coord newDest = new Coord(maxX, maxY);
 			destinations.push(newDest);
 			destinations.push(new Coord(maxX,0));
 			destinations.push(new Coord(0, maxY));
 			destinations.push(new Coord( (int)maxX/2, (int)maxY/2));
 		}
-		
+		System.out.println("### New Destinatin acquired ### " + destinations.peek().toString());
 		return destinations.pop();
 	}
 	
@@ -273,10 +279,10 @@ public class ROVER_03 {
 	            int yPos = findCoordinate(row, current.ypos, centerRow);
 	            //look at eac tile and update min/max if it's not a "NULL" value
 	            //to make sure we stay inside the map when updating target.
-	            if(scanMapTiles[col][row].getTerrain() != Terrain.NONE ){
-	                if(xPos > current.xpos)
+	            if(scanMapTiles[col][row].getTerrain() == Terrain.SOIL && scanMapTiles[col][row].getTerrain() == Terrain.GRAVEL){
+	                if(xPos > maxX)
 	                    maxX = xPos;
-	                if(yPos > current.ypos)
+	                if(yPos > maxY)
 	                    maxY= yPos;
 	            }
 	        }
