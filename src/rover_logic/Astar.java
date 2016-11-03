@@ -143,6 +143,12 @@ public class Astar extends PlanetMap
             }
         }
         fScore[start.xpos][start.ypos] = Math.abs(start.xpos-dest.xpos)+Math.abs(start.ypos-dest.ypos);
+        
+        // ##### If destination coordinate is blocked/unreachable, return U
+        if (blocked(dest, drive)) {
+        	return 'U';
+        }
+        
         while(!openSet.isEmpty()) {
             Coord current = null;
             for(int i = 0; i < openSet.size(); i++) {

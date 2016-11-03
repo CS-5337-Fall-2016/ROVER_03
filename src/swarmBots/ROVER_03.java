@@ -128,6 +128,8 @@ public class ROVER_03 {
 			equipment = new ArrayList<String>();
 			equipment = getEquipment();
 			System.out.println(rovername + " equipment list results " + equipment + "\n");
+			
+			
 			// **** Request START_LOC Location from SwarmServer ****
 			out.println("START_LOC");
 			line = in.readLine();
@@ -188,12 +190,14 @@ public class ROVER_03 {
 	public void moveAStar(String line, Coord startLoc, Coord targetLoc) throws IOException, InterruptedException {
 
 		Astar astar = new Astar(1000, 1000, startLoc, targetLoc);
-		//int first = 1;
 		Coord currentLoc = null;
 		Coord previousLoc = null;
 		boolean destReached = false;
 		char dir = ' ';
 		destinations.push(targetLoc);
+		RoverDriveType driveType = RoverDriveType.getEnum(equipment.get(0));
+		RoverToolType tool_1 = RoverToolType.getEnum(equipment.get(1));
+		RoverToolType tool_2 = RoverToolType.getEnum(equipment.get(2));
 		
 		while (true) {
 
@@ -211,14 +215,13 @@ public class ROVER_03 {
 			if (currentLoc.equals(targetLoc)) {
 				destReached = true;
 				System.out.println("Destination REACHED!!!");
-				System.out.println("Destionatins left: " + destinations.size());
+				System.out.println("Destinations left: " + destinations.size());
 			}
 
 			System.out.println("Current Loc: " + currentLoc.toString());
 
 			this.doScan();
-			astar.addScanMap(scanMap, currentLoc, RoverToolType.getEnum(equipment.get(1)),
-					RoverToolType.getEnum(equipment.get(2))); // this
+			astar.addScanMap(scanMap, currentLoc, tool_1, tool_2); 
 			scanMap.debugPrintMap();
 			//every 5 steps, get update from global map
 			if(steps % 5 == 1){
@@ -228,7 +231,8 @@ public class ROVER_03 {
 			//walk
 			if (!destReached) {
 				updateMinMax(currentLoc);
-				dir = astar.findPath(currentLoc, targetLoc, RoverDriveType.getEnum(equipment.get(0)));
+				System.out.println("DEBUG: maxX= " + maxX + " maxY= " + maxY);
+				dir = astar.findPath(currentLoc, targetLoc, driveType);
 			} else {
 				//dir = wander(line, dir);	//Until we can fix mapping function, we will use 'wander' function
 				
@@ -241,7 +245,7 @@ public class ROVER_03 {
 			}
 			if (dir != 'U') {
 				out.println("MOVE " + dir);
-				System.out.println("DEBUG: MOVING TOWARDS COORD " + targetLoc);
+				System.out.println("DEBUG: MOVING TOWARDS " + targetLoc);
 			}else{
 				targetLoc = newTargetLoc();
 				System.out.println("Unreachable target, SWITCHING TARGETS");
@@ -265,7 +269,7 @@ public class ROVER_03 {
 			destinations.push(new Coord(0, maxY));
 			destinations.push(new Coord( (int)maxX/2, (int)maxY/2));
 		}
-		System.out.println("### New Destinatin acquired ### " + destinations.peek().toString());
+		System.out.println("### New Destination acquired ### " + destinations.peek().toString());
 		return destinations.pop();
 	}
 	
@@ -279,7 +283,7 @@ public class ROVER_03 {
 	            int yPos = findCoordinate(row, current.ypos, centerRow);
 	            //look at eac tile and update min/max if it's not a "NULL" value
 	            //to make sure we stay inside the map when updating target.
-	            if(scanMapTiles[col][row].getTerrain() == Terrain.SOIL && scanMapTiles[col][row].getTerrain() == Terrain.GRAVEL){
+	            if(scanMapTiles[col][row].getTerrain() == Terrain.SOIL || scanMapTiles[col][row].getTerrain() == Terrain.GRAVEL){
 	                if(xPos > maxX)
 	                    maxX = xPos;
 	                if(yPos > maxY)
