@@ -43,7 +43,7 @@ import supportTools.CommunicationHelper;
 
 //TODO: Update destinations - Coords that we can reach to extract science
 //TODO: Update global map
-//TODO: 
+
 
 public class ROVER_03 {
 
@@ -189,6 +189,7 @@ public class ROVER_03 {
 	@SuppressWarnings("unused")
 	public void moveAStar(String line, Coord startLoc, Coord targetLoc) throws IOException, InterruptedException {
 
+		System.out.println("Starting A Star");
 		Astar astar = new Astar(1000, 1000, startLoc, targetLoc);
 		Coord currentLoc = null;
 		Coord previousLoc = null;
@@ -225,7 +226,7 @@ public class ROVER_03 {
 			scanMap.debugPrintMap();
 			//every 5 steps, get update from global map
 			if(steps % 5 == 1){
-				//updateglobalMap(astar.getCom().getGlobalMap());
+				updateglobalMap(astar.getCom().getGlobalMap());
 				astar.updatePlanet(globalMap);
 			}
 			//walk
@@ -259,15 +260,64 @@ public class ROVER_03 {
 
 	}
 	
+	//Update destinatios array, when it's empty to store
+	//unknown locations. Try search from 4 corners from outward corners to the center
+	public void updateDestinations(){
+		//look for unknown in first quadrant
+		quad1:
+		for(int x = 0; x < maxX/2; x++){
+			for(int y = 0; y < maxY/2; y++){
+				Coord possibleDest = new Coord(x, y);
+				if(!globalMap.containsKey(possibleDest)){
+					System.out.println("Addint new unknown Coordinate: " + possibleDest.toString());
+					destinations.push(possibleDest);
+					break quad1;
+				}
+			}
+		}
+		//look for unknown in second quadrant
+		quad2:
+		for(int x = maxX; x >= maxX/2; x--){
+			for(int y = 0; y < maxY/2; y++){
+				Coord possibleDest = new Coord(x, y);
+				if(!globalMap.containsKey(possibleDest)){
+					System.out.println("Addint new unknown Coordinate: " + possibleDest.toString());
+					destinations.push(possibleDest);
+					break quad2;
+				}
+			}
+		}
+		//look for unknown in third quadrant
+		quad3:
+		for(int x = 0; x < maxX/2; x++){
+			for(int y = maxY; y >= maxY/2; y--){
+				Coord possibleDest = new Coord(x, y);
+				if(!globalMap.containsKey(possibleDest)){
+					System.out.println("Addint new unknown Coordinate: " + possibleDest.toString());
+					destinations.push(possibleDest);
+					break quad3;
+				}
+			}
+		}
+		//look for unknown in fourth quadrant
+		quad4:
+		for(int x = maxX; x >= maxX/2; x++){
+			for(int y = maxY; y >= maxY/2; y++){
+				Coord possibleDest = new Coord(x, y);
+				if(!globalMap.containsKey(possibleDest)){
+					System.out.println("Addint new unknown Coordinate: " + possibleDest.toString());
+					destinations.push(possibleDest);
+					break quad4;
+				}
+			}
+		}
+	}
+	
 	public Coord newTargetLoc() {
 		if (destinations.empty()) {	//if destinations list is empty, add more coordinates		
 			
 			System.out.println(">>>>>>>>DEBUG: Adding more coordinates to destinations list.");
-			Coord newDest = new Coord(maxX, maxY);
-			destinations.push(newDest);
-			destinations.push(new Coord(maxX,0));
-			destinations.push(new Coord(0, maxY));
-			destinations.push(new Coord( (int)maxX/2, (int)maxY/2));
+			updateDestinations();
 		}
 		System.out.println("### New Destination acquired ### " + destinations.peek().toString());
 		return destinations.pop();
@@ -281,7 +331,7 @@ public class ROVER_03 {
 	        for(int col = 0; col < scanMapTiles.length; col++){
 	            int xPos = findCoordinate(col, current.xpos, centerRow);
 	            int yPos = findCoordinate(row, current.ypos, centerRow);
-	            //look at eac tile and update min/max if it's not a "NULL" value
+	            //look at each tile and update min/max if it's not a "NULL" value
 	            //to make sure we stay inside the map when updating target.
 	            if(scanMapTiles[col][row].getTerrain() == Terrain.SOIL || scanMapTiles[col][row].getTerrain() == Terrain.GRAVEL){
 	                if(xPos > maxX)
