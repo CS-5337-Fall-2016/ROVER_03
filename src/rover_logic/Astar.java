@@ -130,7 +130,12 @@ public class Astar extends PlanetMap
     }
     //A* pathfinder
     public char findPath(Coord start, Coord dest, RoverDriveType drive) {
-        ArrayList<Coord> openSet = new ArrayList<Coord>();
+    	// ##### If destination coordinate is blocked/unreachable, return U
+        if (blocked(dest, drive)) {
+        	return 'U';
+        }
+    	
+    	ArrayList<Coord> openSet = new ArrayList<Coord>();
         ArrayList<Coord> closedSet = new ArrayList<Coord>();
         openSet.add(start);
         Coord[][] cameFrom = new Coord[this.getWidth()][this.getHeight()];
@@ -143,11 +148,6 @@ public class Astar extends PlanetMap
             }
         }
         fScore[start.xpos][start.ypos] = Math.abs(start.xpos-dest.xpos)+Math.abs(start.ypos-dest.ypos);
-        
-        // ##### If destination coordinate is blocked/unreachable, return U
-        if (blocked(dest, drive)) {
-        	return 'U';
-        }
         
         while(!openSet.isEmpty()) {
             Coord current = null;

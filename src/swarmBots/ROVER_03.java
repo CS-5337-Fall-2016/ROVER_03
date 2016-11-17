@@ -214,6 +214,7 @@ public class ROVER_03 {
 			}
 			previousLoc = currentLoc;
 			if (currentLoc.equals(targetLoc)) {
+				out.println("GATHER");
 				destReached = true;
 				System.out.println("Destination REACHED!!!");
 				System.out.println("Destinations left: " + destinations.size());
@@ -709,8 +710,9 @@ public class ROVER_03 {
 					// then add to the destination
 					if (!destinations.contains(coord) && !marked){
 						//### TODO: COMMENTING TO TEST MAPPING. Will need to uncomment when programming gathering functions
-//						System.out.println("#####ADDED NEW DESTINATION!!!!! : " + coord.toString());
-//						destinations.add(coord);
+						System.out.println("#####Added new destination for gathering: " + coord.toString());
+						comms.markTileForGather(coord);
+						destinations.add(coord);
 					}
 				}
 				//System.out.println("adding to " + coord.toString() + " the tile " + tile.toString());
