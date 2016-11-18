@@ -10,6 +10,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.PriorityQueue;
@@ -66,8 +67,7 @@ public class ROVER_03 {
 	// Rover has it's own logic class
 	public static DStarLite dsl;
 	// List of destinations to travel to i.e. science targets
-	CoordComparator comparator = new CoordComparator();
-	PriorityQueue<Coord> destinations = new PriorityQueue<Coord>(1, comparator);
+	public List<Coord>destinations = new ArrayList<Coord>();
 	private boolean initializedDSL = false;
 	// Communication variables
 	Communication comms;
@@ -219,7 +219,15 @@ public class ROVER_03 {
 			}
 			previousLoc = currentLoc;
 			if (currentLoc.equals(targetLoc)) {
-				out.println("GATHER");
+				
+				//gather twice to double check
+				if(globalMap.get(targetLoc).getScience() != null){
+					//attempt gathering 4 times before moving on
+					for(int x = 4; x >= 0; x--){
+						Thread.sleep(sleepTime);
+						out.println("GATHER");
+					}
+				}
 				destReached = true;
 				System.out.println("Destination REACHED!!!");
 				System.out.println("Destinations left: " + destinations.size());
@@ -242,6 +250,7 @@ public class ROVER_03 {
 				dir = astar.findPath(currentLoc, targetLoc, driveType);
 			} else {
 				//dir = wander(line, dir);	//Until we can fix mapping function, we will use 'wander' function
+				cleanDestinations();
 				targetLoc = newTargetLoc();
 				steps++;
 				destReached = false;
@@ -274,7 +283,7 @@ public class ROVER_03 {
 			for(int y = 0; y < maxY/2; y++){
 				Coord possibleDest = new Coord(x, y);
 				if(!globalMap.containsKey(possibleDest)){
-					System.out.println("Addint new unknown Coordinate: " + possibleDest.toString());
+					System.out.println("Adding new unknown Coordinate: " + possibleDest.toString());
 					destinations.add(possibleDest);
 					break quad1;
 				}
@@ -286,7 +295,7 @@ public class ROVER_03 {
 			for(int y = 0; y < maxY/2; y++){
 				Coord possibleDest = new Coord(x, y);
 				if(!globalMap.containsKey(possibleDest)){
-					System.out.println("Addint new unknown Coordinate: " + possibleDest.toString());
+					System.out.println("Adding new unknown Coordinate: " + possibleDest.toString());
 					destinations.add(possibleDest);
 					break quad2;
 				}
@@ -298,7 +307,7 @@ public class ROVER_03 {
 			for(int y = maxY; y >= maxY/2; y--){
 				Coord possibleDest = new Coord(x, y);
 				if(!globalMap.containsKey(possibleDest)){
-					System.out.println("Addint new unknown Coordinate: " + possibleDest.toString());
+					System.out.println("Adding new unknown Coordinate: " + possibleDest.toString());
 					destinations.add(possibleDest);
 					break quad3;
 				}
@@ -310,7 +319,7 @@ public class ROVER_03 {
 			for(int y = maxY; y >= maxY/2; y++){
 				Coord possibleDest = new Coord(x, y);
 				if(!globalMap.containsKey(possibleDest)){
-					System.out.println("Addint new unknown Coordinate: " + possibleDest.toString());
+					System.out.println("Adding new unknown Coordinate: " + possibleDest.toString());
 					destinations.add(possibleDest);
 					break quad4;
 				}
@@ -324,8 +333,29 @@ public class ROVER_03 {
 			System.out.println(">>>>>>>>DEBUG: Adding more coordinates to destinations list.");
 			updateDestinations();
 		}
-		System.out.println("### New Destination acquired ### " + destinations.peek().toString());
-		return destinations.poll();
+//		System.out.println("### New Destination acquired ### " + destinations.peek().toString());
+//		return destinations.poll();
+		int min = Integer.MAX_VALUE;
+		int index = 0;
+		Coord current = null;
+		for(int x = 0; x < destinations.size(); x++){
+			current = destinations.get(x);
+			int manHat = manhattanDistance(current);
+			if(manHat < min){
+				index = x;
+				min = manHat;
+				System.out.println("New min dist: " + min + " with coordinates: " + current.toString());
+			}
+		}
+		current = destinations.get(index);
+		destinations.remove(index);
+		System.out.println("returning new target -------> " + current.toString());
+		return current;
+	}
+	
+	private int manhattanDistance(Coord coord){
+		int distance = Math.abs(currentLoc.xpos - coord.xpos) + Math.abs(currentLoc.ypos - coord.ypos);
+		return distance;
 	}
 	
 	//Update min max from each scan
@@ -553,8 +583,6 @@ public class ROVER_03 {
 			MapTile[][] scanMapTiles = scanMap.getScanMap();
 			// update/add new mapTiles to dsl hashMaps
 			updateScannedStates(scanMapTiles, currentLoc);
-			// post scanned tiles to global map
-			// comms.postScanMapTiles(currentLoc, scanMapTiles);
 			// find path from current node to goal
 			dsl.replan();
 			char move = getMoveFromPath(currentLoc);
@@ -688,6 +716,37 @@ public class ROVER_03 {
 			in.readLine();
 		}
 	}
+	
+	//clean destinations
+	public void cleanDestinations(){
+		Iterator<Coord> iter = destinations.iterator();
+		while(iter.hasNext()){
+			MapTile tile = globalMap.get(iter.next());
+			//if it's not in globalMap yet, keep it
+			if(tile == null ){
+				continue;
+			}else{
+				//if it is in globalMap, discard it, unless it has science
+				if(tile.getScience() == Science.NONE )
+					iter.remove();
+			}
+		}
+	}
+	
+	//borrowed from aStar
+	private boolean isBlocked(Terrain ter){
+		RoverDriveType driveType = RoverDriveType.getEnum(equipment.get(0));			
+        if(ter == Terrain.NONE) {
+            return true;
+        }
+        if(ter == Terrain.SAND && driveType != RoverDriveType.TREADS) {
+            return true;
+        }
+        if(ter == Terrain.ROCK && driveType != RoverDriveType.WALKER) {
+            return true;
+        }
+        return false;
+	}
 
 	/**************************
 	 * Communications Functions
@@ -705,23 +764,18 @@ public class ROVER_03 {
 
 			// only bother to save if our globalMap doesn't contain the
 			// coordinate
+			MapTile tile = CommunicationHelper.convertToMapTile(jsonObj);
 			if (!globalMap.containsKey(coord)) {
-				MapTile tile = CommunicationHelper.convertToMapTile(jsonObj);
-
-				// if tile has science AND is not in sand
-				if (tile.getScience() != Science.NONE && tile.getTerrain() != Terrain.SAND && 
-						tile.getTerrain() != Terrain.ROCK && tile.getTerrain() != Terrain.NONE) {
-					// then add to the destination
-					if (!destinations.contains(coord) && !marked){
-						//### TODO: COMMENTING TO TEST MAPPING. Will need to uncomment when programming gathering functions
-						System.out.println("#####Added new destination for gathering: " + coord.toString());
-						comms.markTileForGather(coord);
-						destinations.add(coord);
-					}
+				globalMap.put(coord, tile);	
+			}
+			if (tile.getScience() != Science.NONE && !isBlocked(tile.getTerrain())) {
+				// then add to the destination
+				if (!destinations.contains(coord) && !marked){
+					System.out.println("#####Added new destination for gathering: " + coord.toString());
+					comms.markTileForGather(coord);
+					destinations.add(coord);
 				}
-				//System.out.println("adding to " + coord.toString() + " the tile " + tile.toString());
-				globalMap.put(coord, tile);
-			}//else update tile instead of just disregarding it?
+			}
 		}
 		//System.out.println("map continats " + globalMap.size() + " tiles!");
 	}
@@ -832,47 +886,4 @@ public class ROVER_03 {
 		client.run();
 	}
 	
-	public class CoordComparator implements Comparator<Coord>{
-		@Override
-		public int compare(Coord o1, Coord o2) {
-			//get manhattan distance for each coordinate
-			int priority = manhattanDistance(o1) - manhattanDistance(o2);
-			//closer objects get higher priority since highest priority is the smallest number.
-			if(globalMap.containsKey(o1)){
-				MapTile firstObj = globalMap.get(o1);
-				if(firstObj.getScience() != Science.NONE )
-					if(!isBlocked(firstObj.getTerrain()))
-						priority -= 1000; //increase object ones priority by making it smaller
-			}
-			if(globalMap.containsKey(o2)){
-				MapTile secObj = globalMap.get(o2);
-				if(secObj.getScience() != Science.NONE)
-					if(!isBlocked(secObj.getTerrain()))
-						priority += 1000; //otherwise if second object has science, greatly increase it's priority
-			}
-			//if both have sciences that can be reached, then they'll be ordered by distance only. 
-			return priority;
-		}
-		
-		//compare by manhattan distance to current location of rover
-		private int manhattanDistance(Coord coord){
-			int distance = Math.abs(currentLoc.xpos - coord.xpos) + Math.abs(currentLoc.ypos - coord.ypos);
-			return distance;
-		}
-		
-		//borrowed from aStar
-		private boolean isBlocked(Terrain ter){
-			RoverDriveType driveType = RoverDriveType.getEnum(equipment.get(0));			
-	        if(ter == Terrain.NONE) {
-	            return true;
-	        }
-	        if(ter == Terrain.SAND && driveType != RoverDriveType.TREADS) {
-	            return true;
-	        }
-	        if(ter == Terrain.ROCK && driveType != RoverDriveType.WALKER) {
-	            return true;
-	        }
-	        return false;
-			}
-		}
 }
