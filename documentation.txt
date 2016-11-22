@@ -1,9 +1,9 @@
 Abstract :
-The main objective of this project is to develop software that will simulate a swarm of autonomous robots rovers that has been designed to explore the surface of another planet(MARS).
- The rover has to communicate with the CommunicationServer in order to coordinate with the other rovers in the planet and to accomplish the assigned task of exploring to the given
- targeted area. The tools available will consists of an Organic Scanner as well as tools for excavating from the sand and soil. Our rover will be exploring all over the map that contains
- four types of terrains and also some Sciences that has to be extracted.
-Efficient path finding is critical to the development of the useful autonomous robots rover. In this ,we investigated the one major challenge: computing a path efficiently.The proposed 
+	The main objective of this project is to develop software that will simulate a swarm of autonomous robots rovers that has been designed to explore the surface of another planet(MARS).
+The rover has to communicate with the CommunicationServer in order to coordinate with the other rovers in the planet and to accomplish the assigned task of exploring to the given 
+targeted area. The tools available will consists of an Scanner as well as tools for excavating from the sand and soil. Our rover will be exploring all over the map that contains four 
+types of terrains and also some Sciences that has to be extracted.
+Efficient path finding is critical to the development of the useful autonomous robots rover. In this ,we investigated the one major challenge: computing a path efficiently. The proposed 
 system finds and analyses an optimal path for a robots, while avoiding obstacles along the way. The environment is first scanned using a scanner. Obstacles detecting methods are then 
 performed to identify the existence of obstacles within the unknown environment. In this paper we focus on the application of space exploration where obstacles are recognized and then 
 shortest path is obtain by A-Star algorithm. 
@@ -11,29 +11,44 @@ shortest path is obtain by A-Star algorithm.
 Keywords —  A-star algorithm.
 
 Introduction:
-The path planning method aims to calculate shortest path for a rover, while avoiding obstacles along the way. During exploration, autonomous robots are generally based on navigating 
+	The path planning method aims to calculate shortest path for a rover, while avoiding obstacles along the way. During exploration, autonomous robots are generally based on navigating 
 from a starting location to target location in unknown environment. Where, the points that should be visited are unknown. To meet time consuming constraint, a shorter path is always 
-preferred. Therefore, an path planning algorithm is always required. Path planning is a complex task. In order to find the shortest path between starting location to targeted location 
-in the environment, it is usually needed a map to find shortest the path and follow it. It would be more useful solution for which maps are not available from source to destinations 
+preferred.Therefore, an path planning algorithm is always required. Path planning is a complex task. In order to find the shortest path between starting location to targeted location in 
+the environment, it is usually needed a map to find shortest the path and follow it. It would be more useful solution for which maps are not available from source to destinations 
 particularly in unknown environment.
-One method a robot system could use to learn about its environment is to scan the map title in the dimension of 7*7 and finds obstacles around and then finds the shortest path between
- starting point to the destination by avoiding these obstacles. By this method, obstacles can be encountered and can be avoided while navigation. Using this methodology, the rover can 
+One method a robot system could use to learn about its environment is to scan the map title in the dimension of 7*7 and finds obstacles around and then finds the shortest path between 
+starting point to the destination by avoiding these obstacles. By this method, obstacles can be encountered and can be avoided while navigation. Using this methodology, the rover can 
 decide how to move from point A to point B in an efficient manner. 
 
 Implementation:
 
 •	Path finding Algorithm:
-Navigating a terrain and planning the shortest path to a targeted location, is one of the fundamental problem. While there are many approaches to path planning, one of the most common 
-and widely used is the A-Star path algorithm. A-Star requires a distance function from start point to target point. It does not need an exact distance, just an estimate of how long it 
-would take to get from start configuration to the goal configuration, in the best case. The A-Star algorithm combines features of uniform-cost search and pure heuristic search to 
-efficiently compute optimal solutions. A-star uses the distance between the current location and the target location and moves to the node that has the smallest distance. 
-A-Star algorithm is based on best-first search algorithm in which the cost associated with a node is f(n) = g(n) + h(n), where g(n) is the cost of the path from the initial state to 
-node n and h(n) is the heuristic estimate or the cost or a path from node n to a goal node. Thus, f(n) estimates the lowest total cost of any solution path going through node n. 
-At each point a node with lowest f value is chosen for expansion. Ties among nodes of equal f value should be broken in favor of nodes with lower h values. The algorithm terminates when
- a goal is chosen for expansion. The h(n) part of the f(n) function must be an admissible heuristic; that is, it should not overestimate the distance to the goal configuration. Thus, 
-for an application like routing, h(n) might represent the straight-line distance to the target location, since that is physically the minimum distance between any two nodes. The algorithm 
-begins by creating an open and a closed list. The open list contains the entire node that can be reached from the current node, and the closed list contains the parent of the current node.
- Now pick from the open list the node with the lowest distance. This becomes new current node, and the previous node is added to the closed list. Now that we have a new current square, 
-check the node adjacent to it. If the adjacent node is unpassable or on the closed list, then ignore it. If the adjacent node is not on the open list, add it. Finally, if the adjacent 
-node is already on the open list, check if this new path is shorter, and, if it is, then change that node’s parent to the current node. The algorithm ends when the destination node has 
-been added to the closed list.
+			Navigating a terrain and planning the shortest path to a targeted location, is one of the fundamental problem. While there are many approaches to path planning, one
+of the most common and widely used is the A-Star path algorithm. A-Star requires a distance function from start point to target point. It does not need an exact distance, just an estimate 
+of how long it would take to get from start configuration to the goal configuration, in the best case. The A-Star algorithm combines features of uniform-cost search and pure heuristic search
+to efficiently compute optimal solutions. A-star uses the distance between the current location and the target location and moves to the node that has the smallest distance. A-Star algorithm 
+is based on best-first search algorithm in which the cost associated with a node is f(n) = g(n) + h(n), where g(n) is the cost of the path from the initial state to node n and h(n) is the 
+heuristic estimate or the cost or a path from node n to a goal node. Thus, f(n) estimates the lowest total cost of any solution path going through node n. At each point a node with lowest 
+f value is chosen for expansion. Ties among nodes of equal f value should be broken in favor of nodes with lower h values. The algorithm terminates when a goal is chosen for expansion. The
+ h(n) part of the f(n) function must be an admissible heuristic; that is, it should not overestimate the distance to the goal configuration. Thus, for an application like routing, h(n) 
+might represent the straight-line distance to the target location, since that is physically the minimum distance between any two nodes. The algorithm begins by creating an open and a 
+closed list. The open list contains the entire node that can be reached from the current node, and the closed list contains the parent of the current node. Now pick from the open list 
+the node with the lowest distance. This becomes new current node, and the previous node is added to the closed list. Now that we have a new current square, check the node adjacent to it. 
+If the adjacent node is unpassable or on the closed list, then ignore it. If the adjacent node is not on the open list, add it. Finally, if the adjacent node is already on the open list,
+check if this new path is shorter, and, if it is, then change that node’s parent to the current node. The algorithm ends when the destination node has been added to the closed list.
+
+Working Principles:
+
+•	Path Planning
+			A Star algorithm is defined under the rover_logic , where it takes the current location by communicating with the server. If the connection is established with the 
+server, then the listingof the equipment will be updated in the arraylist. Then, rover will do scanning process by using the scanner function. After getting the ScanMap , it will check 
+whether the destination location is reached or not .If the destination point is not reached then rover will check for the next move .It has to decide which direction it should traverse.
+So we implemented methodologies in order to check which direction the obstacle has to be resolved. That means if the current location is north side, it will first check for east and then 
+to the west and if both are blocked then it will move towards south. Likewise ,We just implemented for the remaining three directions. One more function we added here is that, if the north,
+south ,west and east are blocked by obstacle means the rover should just take an U turn. The obstacle should be the rock or sand. As the rover traverse through the resolved direction, 
+the ScanMap will updated and the same process continues until it reaches the destination point. Therefore, the connection will be automatically terminated if the time assigned is exceeded.
+
+•	Mapping 
+
+
+ 
